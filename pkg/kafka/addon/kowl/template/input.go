@@ -13,41 +13,41 @@ const (
 	kowlConfigFileTemplate = `
 kafka:
   brokers:
-    - {{.bootstrapServerHostname}}
+    - {{.BootstrapServerHostname}}
   clientId: kowl-on-cluster
   sasl:
     enabled: true
-    username: "{{.saslUsername}}"
+    username: "{{.SaslUsername}}"
     mechanism: SCRAM-SHA-512
   tls:
     enabled: true
   schemaRegistry:
     enabled: true
-    urls: ["http://{{.schemaRegistryHostname}}"]
+    urls: ["http://{{.SchemaRegistryHostname}}"]
   protobuf:
     enabled: true
     schemaRegistry:
       enabled: true
-      refreshInterval: {{.refreshIntervalMinutes}}m
+      refreshInterval: {{.RefreshIntervalMinutes}}m
 `
 )
 
 type input struct {
-	bootstrapServerHostname string
-	bootstrapServerPort     int32
-	saslUsername            string
-	schemaRegistryHostname  string
-	refreshIntervalMinutes  int32
+	BootstrapServerHostname string
+	BootstrapServerPort     int32
+	SaslUsername            string
+	SchemaRegistryHostname  string
+	RefreshIntervalMinutes  int32
 }
 
 func extractInput(ctx *pulumi.Context) *input {
 	var contextState = ctx.Value(kafkacontextstate.Key).(kafkacontextstate.ContextState)
 
 	return &input{
-		bootstrapServerHostname: contextState.Spec.ExternalBootstrapHostname,
-		bootstrapServerPort:     listener.ExternalPublicListenerPortNumber,
-		saslUsername:            adminuser.Username,
-		schemaRegistryHostname:  schemaregistryingress.GetKubeServiceNameFqdn(contextState.Spec.NamespaceName),
-		refreshIntervalMinutes:  RefreshIntervalMinutes,
+		BootstrapServerHostname: contextState.Spec.ExternalBootstrapHostname,
+		BootstrapServerPort:     listener.ExternalPublicListenerPortNumber,
+		SaslUsername:            adminuser.Username,
+		SchemaRegistryHostname:  schemaregistryingress.GetKubeServiceNameFqdn(contextState.Spec.NamespaceName),
+		RefreshIntervalMinutes:  RefreshIntervalMinutes,
 	}
 }
