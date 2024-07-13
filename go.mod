@@ -61,12 +61,12 @@ require (
 )
 
 require (
-	github.com/plantoncloud-inc/go-commons v0.0.431
-	github.com/plantoncloud/environment-pulumi-blueprint v0.0.0-20240702152006-b9998ac116c4
-	github.com/plantoncloud/kube-cluster-pulumi-blueprint v0.0.0-20240702151918-60b3743fea2c
-	github.com/plantoncloud/planton-cloud-apis v0.0.204
-	github.com/plantoncloud/pulumi-blueprint-golang-commons v0.0.0-20240702151641-1f0f663273d0
-	github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.49
+	github.com/plantoncloud-inc/go-commons v0.0.433
+	github.com/plantoncloud/environment-pulumi-blueprint v0.0.0-20240713083920-782974b33c3e
+	github.com/plantoncloud/kube-cluster-pulumi-blueprint v0.0.0-20240713083822-41b0b9bb03cf
+	github.com/plantoncloud/planton-cloud-apis v0.0.211
+	github.com/plantoncloud/pulumi-blueprint-golang-commons v0.0.0-20240713083334-2470e197b77f
+	github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.52
 	k8s.io/api v0.28.1
 )
 
