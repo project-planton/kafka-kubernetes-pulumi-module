@@ -3,6 +3,7 @@ package kafka
 import (
 	"github.com/pkg/errors"
 	environmentblueprinthostnames "github.com/plantoncloud/environment-pulumi-blueprint/pkg/gcpgke/endpointdomains/hostnames"
+	"github.com/plantoncloud/kafka-kubernetes-pulumi-blueprint/pkg"
 	kafkacontextstate "github.com/plantoncloud/kafka-kubernetes-pulumi-blueprint/pkg/kafka/contextstate"
 	"github.com/plantoncloud/kafka-kubernetes-pulumi-blueprint/pkg/kafka/network/istio/hostname"
 	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kubecluster/enums/kubernetesworkloadingresstype"
@@ -10,7 +11,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func loadConfig(ctx *pulumi.Context, resourceStack *ResourceStack) (*kafkacontextstate.ContextState, error) {
+func loadConfig(ctx *pulumi.Context, resourceStack *pkg.ResourceStack) (*kafkacontextstate.ContextState, error) {
 
 	kubernetesProvider, err := pulumikubernetesprovider.GetWithStackCredentials(ctx, resourceStack.Input.CredentialsInput)
 	if err != nil {

@@ -4,10 +4,14 @@ go 1.22
 
 toolchain go1.22.2
 
-//replace github.com/plantoncloud/planton-cloud-apis => /Users/swarup/scm/github.com/plantoncloud/planton-cloud-apis
-//
-//replace github.com/plantoncloud/stack-job-runner-golang-sdk => /Users/swarup/scm/github.com/plantoncloud/stack-job-runner-golang-sdk
-//
+replace github.com/plantoncloud/planton-cloud-apis => ../../plantoncloud/planton-cloud-apis
+
+replace github.com/plantoncloud/stack-job-runner-golang-sdk => ../../plantoncloud/stack-job-runner-golang-sdk
+
+replace github.com/plantoncloud/pulumi-module-golang-commons => ../../plantoncloud/pulumi-module-golang-commons
+
+replace github.com/plantoncloud/kubernetes-crd-pulumi-types => ../../plantoncloud/kubernetes-crd-pulumi-types
+
 //replace github.com/plantoncloud-inc/go-commons => /Users/swarup/scm/github.com/plantoncloud-inc/go-commons
 //
 //replace github.com/plantoncloud/kube-cluster-pulumi-blueprint => /Users/swarup/scm/github.com/plantoncloud/kube-cluster-pulumi-blueprint
@@ -49,14 +53,14 @@ require (
 	github.com/RedHatInsights/strimzi-client-go v0.28.1
 	github.com/cert-manager/cert-manager v1.13.2
 	github.com/pkg/errors v0.9.1
-	github.com/pulumi/pulumi-kubernetes/sdk/v4 v4.7.1
-	github.com/pulumi/pulumi/sdk/v3 v3.122.0
+	github.com/pulumi/pulumi-kubernetes/sdk/v4 v4.15.0
+	github.com/pulumi/pulumi/sdk/v3 v3.126.0
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	google.golang.org/grpc v1.63.2 // indirect
-	istio.io/api v0.0.0-20220512181135-e8ec1e1d89de
+	istio.io/api v1.22.3
 	istio.io/client-go v1.14.0
 	k8s.io/apiextensions-apiserver v0.28.1
-	k8s.io/apimachinery v0.28.3
+	k8s.io/apimachinery v0.29.0
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 )
 
@@ -64,10 +68,10 @@ require (
 	github.com/plantoncloud-inc/go-commons v0.0.433
 	github.com/plantoncloud/environment-pulumi-blueprint v0.0.0-20240713083920-782974b33c3e
 	github.com/plantoncloud/kube-cluster-pulumi-blueprint v0.0.0-20240713083822-41b0b9bb03cf
-	github.com/plantoncloud/planton-cloud-apis v0.0.211
+	github.com/plantoncloud/planton-cloud-apis v0.0.214
 	github.com/plantoncloud/pulumi-blueprint-golang-commons v0.0.0-20240713083334-2470e197b77f
 	github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.52
-	k8s.io/api v0.28.1
+	k8s.io/api v0.29.0
 )
 
 require (
@@ -211,6 +215,8 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/term v1.1.0 // indirect
+	github.com/plantoncloud/kubernetes-crd-pulumi-types v0.0.0-20240725042224-48441a882fc2 // indirect
+	github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240725065835-ac24c213b464 // indirect
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
 	github.com/pulumi/esc v0.9.1 // indirect
 	github.com/pulumi/pulumi-gcp/sdk/v7 v7.29.0 // indirect
@@ -261,8 +267,8 @@ require (
 	google.golang.org/api v0.169.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20240311173647-c811ad7063a7 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240311173647-c811ad7063a7 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311173647-c811ad7063a7 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240314234333-6e1732d8331c // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
@@ -270,12 +276,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/cli-runtime v0.26.0 // indirect
 	k8s.io/client-go v1.5.2 // indirect
-	k8s.io/klog/v2 v2.100.1 // indirect
+	k8s.io/klog/v2 v2.110.1 // indirect
 	lukechampine.com/frand v1.4.2 // indirect
 	sigs.k8s.io/controller-runtime v0.16.1 // indirect
 	sigs.k8s.io/gateway-api v0.8.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 

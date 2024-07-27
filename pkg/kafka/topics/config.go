@@ -1,7 +1,7 @@
 package topics
 
 import (
-	code2cloudv1deploykfcmodel "github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kafkakubernetes/model"
+	code2cloudv1deploykfcmodel "github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes/model"
 )
 
 const (
@@ -80,19 +80,4 @@ func getConfig(defaultConfig, inputConfig *code2cloudv1deploykfcmodel.KafkaTopic
 		finalConfig[k] = v
 	}
 	return &code2cloudv1deploykfcmodel.KafkaTopicConfig{Value: finalConfig}
-}
-
-func isEqual(this, that *code2cloudv1deploykfcmodel.KafkaTopicConfig) bool {
-	if this == nil && that == nil {
-		return true
-	}
-	if (this == nil && that != nil) || (this != nil && that == nil) {
-		return false
-	}
-	for thisKey, thisValue := range this.Value {
-		if that.Value[thisKey] != thisValue {
-			return false
-		}
-	}
-	return true
 }
