@@ -2,8 +2,6 @@ package pkg
 
 import (
 	"github.com/pkg/errors"
-	"github.com/plantoncloud/kafka-kubernetes-pulumi-blueprint/pkg/kafka/addon"
-	kafkaoutputs "github.com/plantoncloud/kafka-kubernetes-pulumi-blueprint/pkg/kafka/outputs"
 	kafkakubernetesmodel "github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes/model"
 	"github.com/plantoncloud/pulumi-module-golang-commons/pkg/provider/kubernetes/pulumikubernetesprovider"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -19,7 +17,7 @@ type ResourceStack struct {
 func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
 	locals := initializeLocals(ctx, s.Input)
 
-	//create kubernetes-provider from the credential in the stack-input
+	//create kubernetes-provider from the credential in the stack-kowlConfigTemplateInput
 	kubernetesProvider, err := pulumikubernetesprovider.GetWithKubernetesClusterCredential(ctx,
 		s.Input.KubernetesClusterCredential)
 	if err != nil {
@@ -48,13 +46,8 @@ func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
 	}
 
 	//create kafka admin user
-	if err := adminUser(ctx, locals, createdNamespace, s.Labels); err != nil {
+	if err := kafkaAdminUser(ctx, locals, createdNamespace, s.Labels); err != nil {
 		return errors.Wrap(err, "failed to create kafka admin user")
-	}
-
-	//create kafka istio ingress
-	if err := istioIngress(ctx, locals, createdNamespace, s.Labels); err != nil {
-		return errors.Wrap(err, "failed to create kafka istio ingress")
 	}
 
 	//create kafka topics
@@ -62,14 +55,34 @@ func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
 		return errors.Wrap(err, "failed to create kafka topics")
 	}
 
-	if err := addon.Resources(ctx); err != nil {
-		return errors.Wrap(err, "failed to add addons resources")
+	//create kafka istio ingress
+	if locals.KafkaKubernetes.Spec.Ingress.IsEnabled {
+		if err := kafkaIstioIngress(ctx, locals, createdNamespace, s.Labels); err != nil {
+			return errors.Wrap(err, "failed to create kafka istio ingress")
+		}
 	}
 
-	err = kafkaoutputs.Export(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to export kafka kubernetes outputs")
+	//create schema-registry
+	if locals.KafkaKubernetes.Spec.SchemaRegistryContainer != nil &&
+		locals.KafkaKubernetes.Spec.SchemaRegistryContainer.IsEnabled {
+		if err := schemaRegistry(ctx, locals, createdNamespace, s.Labels); err != nil {
+			return errors.Wrap(err, "failed to create schema registry deployment")
+		}
+
+		if err := schemaRegistryIstioIngress(ctx, locals, createdNamespace, s.Labels); err != nil {
+			return errors.Wrap(err, "failed to create schema registry ingress")
+		}
 	}
 
+	//create kowl
+	if locals.KafkaKubernetes.Spec.IsKowlDashboardEnabled {
+		if err := kowl(ctx, locals, createdNamespace, s.Labels); err != nil {
+			return errors.Wrap(err, "failed to create kowl deployment")
+		}
+
+		if err := kowlIstioIngress(ctx, locals, createdNamespace, s.Labels); err != nil {
+			return errors.Wrap(err, "failed to create kowl ingress")
+		}
+	}
 	return nil
 }

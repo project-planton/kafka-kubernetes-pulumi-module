@@ -12,7 +12,7 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 )
 
-func schemaRegistryDeployment(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
+func schemaRegistry(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
 	labels map[string]string) error {
 	labels[englishword.EnglishWord_app.String()] = vars.SchemaRegistryDeploymentName
 	_, err := appsv1.NewDeployment(ctx, vars.SchemaRegistryDeploymentName, &appsv1.DeploymentArgs{

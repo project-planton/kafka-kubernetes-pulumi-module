@@ -3,7 +3,6 @@ package pkg
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/plantoncloud/kafka-kubernetes-pulumi-blueprint/pkg/kafka/listener"
 	certmanagerv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/certmanager/certmanager/v1"
 	istiov1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/istio/networking/v1"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -12,10 +11,10 @@ import (
 	v1 "istio.io/api/networking/v1"
 )
 
-func istioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace, labels map[string]string) error {
+func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace, labels map[string]string) error {
 	//crate new certificate
 	addedCertificate, err := certmanagerv1.NewCertificate(ctx,
-		"ingress-certificate",
+		"kafka-ingress-certificate",
 		&certmanagerv1.CertificateArgs{
 			Metadata: metav1.ObjectMetaArgs{
 				Name:      pulumi.String(locals.KafkaKubernetes.Metadata.Id),
@@ -24,7 +23,7 @@ func istioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 			},
 			Spec: certmanagerv1.CertificateSpecArgs{
 				DnsNames:   pulumi.ToStringArray(locals.IngressHostnames),
-				SecretName: pulumi.String(locals.IngressCertSecretName),
+				SecretName: pulumi.String(locals.IngressBootstrapCertSecretName),
 				IssuerRef: certmanagerv1.CertificateSpecIssuerRefArgs{
 					Kind: pulumi.String("ClusterIssuer"),
 					Name: pulumi.String(locals.IngressCertClusterIssuerName),
@@ -90,7 +89,7 @@ func istioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 		istiov1.VirtualServiceSpecTlsArgs{
 			Match: istiov1.VirtualServiceSpecTlsMatchArray{
 				istiov1.VirtualServiceSpecTlsMatchArgs{
-					Port:     pulumi.Int(listener.ExternalPublicListenerPortNumber),
+					Port:     pulumi.Int(vars.ExternalPublicListenerPortNumber),
 					SniHosts: externalHostnames,
 				},
 			},
@@ -99,7 +98,7 @@ func istioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 					Destination: istiov1.VirtualServiceSpecTlsRouteDestinationArgs{
 						Host: pulumi.String(locals.BootstrapKubeServiceFqdn),
 						Port: istiov1.VirtualServiceSpecTlsRouteDestinationPortArgs{
-							Number: pulumi.Int(listener.ExternalPublicListenerPortNumber),
+							Number: pulumi.Int(vars.ExternalPublicListenerPortNumber),
 						},
 					},
 				},
@@ -111,7 +110,7 @@ func istioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 			Match: istiov1.VirtualServiceSpecTlsMatchArray{
 				istiov1.VirtualServiceSpecTlsMatchArgs{
 					//private endpoints also listen on same port as public endpoints
-					Port:     pulumi.Int(listener.ExternalPublicListenerPortNumber),
+					Port:     pulumi.Int(vars.ExternalPublicListenerPortNumber),
 					SniHosts: internalHostnames,
 				},
 			},
@@ -121,7 +120,7 @@ func istioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 						Host: pulumi.String(locals.BootstrapKubeServiceFqdn),
 						Port: istiov1.VirtualServiceSpecTlsRouteDestinationPortArgs{
 							//requests are forwarded to the internal listener port
-							Number: pulumi.Int(listener.ExternalPrivateListenerPortNumber),
+							Number: pulumi.Int(vars.ExternalPrivateListenerPortNumber),
 						},
 					},
 				},

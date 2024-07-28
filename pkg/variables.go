@@ -25,6 +25,23 @@ var vars = struct {
 	SchemaRegistryContainerPort       int
 	SchemaRegistryKafkaStoreTopicName string
 	SchemaRegistryDeploymentName      string
+	SchemaRegistryKubeServiceName     string
+
+	KowlKubeServiceName             string
+	KowlConfigMapName               string
+	KowlConfigKeyName               string
+	KowlRefreshIntervalMinutes      int
+	KowlConfigFileTemplate          string
+	KowlDeploymentName              string
+	KowlDockerImage                 string
+	KowlContainerPort               int
+	KowlEnvVarNameKafkaSaslPassword string
+	KowlConfigVolumeName            string
+	KowlConfigVolumeMountPath       string
+	KowlCpuRequests                 string
+	KowlCpuLimits                   string
+	KowlMemoryRequests              string
+	KowlMemoryLimits                string
 }{
 	ExternalPublicListenerName:        "extpub",
 	ExternalPublicListenerPortNumber:  9092, //this port is intended to be used by clients output the private network and outside the container cluster
@@ -71,4 +88,40 @@ var vars = struct {
 	SchemaRegistryContainerPort:       8081,
 	SchemaRegistryKafkaStoreTopicName: "schema-registry",
 	SchemaRegistryDeploymentName:      "schema-registry",
+	SchemaRegistryKubeServiceName:     "sr",
+
+	KowlKubeServiceName:        "kowl",
+	KowlConfigMapName:          "kowl",
+	KowlConfigKeyName:          "kowl.yaml",
+	KowlRefreshIntervalMinutes: 5,
+	KowlConfigFileTemplate: `
+kafka:
+  brokers:
+    - {{.BootstrapServerHostname}}
+  clientId: kowl-on-cluster
+  sasl:
+    enabled: true
+    username: "{{.SaslUsername}}"
+    mechanism: SCRAM-SHA-512
+  tls:
+    enabled: true
+  schemaRegistry:
+    enabled: true
+    urls: ["http://{{.SchemaRegistryHostname}}"]
+  protobuf:
+    enabled: true
+    schemaRegistry:
+      enabled: true
+      refreshInterval: {{.RefreshIntervalMinutes}}m
+`,
+	KowlDeploymentName:              "kowl",
+	KowlDockerImage:                 "quay.io/cloudhut/kowl:master-59f68da",
+	KowlContainerPort:               8080,
+	KowlEnvVarNameKafkaSaslPassword: "KAFKA_SASL_PASSWORD",
+	KowlConfigVolumeName:            "kowl-config",
+	KowlConfigVolumeMountPath:       "/var/kowl/config.yaml",
+	KowlCpuRequests:                 "25m",
+	KowlCpuLimits:                   "150m",
+	KowlMemoryRequests:              "90Mi",
+	KowlMemoryLimits:                "180Mi",
 }
