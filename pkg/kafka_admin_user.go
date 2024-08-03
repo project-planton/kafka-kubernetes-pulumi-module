@@ -12,20 +12,23 @@ import (
 func kafkaAdminUser(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
 	labels map[string]string) error {
 
-	_, err := v1beta2.NewKafkaUser(ctx, "admin-user", &v1beta2.KafkaUserArgs{
-		Kind:       pulumi.String("KafkaUser"),
-		ApiVersion: pulumi.String("kafka.strimzi.io/v1beta2"),
-		Metadata: metav1.ObjectMetaArgs{
-			Name:      pulumi.String(locals.KafkaKubernetes.Metadata.Id),
-			Namespace: createdNamespace.Metadata.Name(),
-			Labels:    pulumi.ToStringMap(labels),
-		},
-		Spec: v1beta2.KafkaUserSpecArgs{
-			Authentication: v1beta2.KafkaUserSpecAuthenticationArgs{
-				Type: pulumi.String(strimzitypes.KafkaUserSpecAuthenticationTypeScramSha512),
+	//add the label required to create the admin secret for the target kafka-cluster
+	labels["strimzi.io/cluster"] = locals.KafkaKubernetes.Metadata.Id
+
+	_, err := v1beta2.NewKafkaUser(ctx,
+		"admin-user",
+		&v1beta2.KafkaUserArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name:      pulumi.String(vars.AdminUsername),
+				Namespace: createdNamespace.Metadata.Name(),
+				Labels:    pulumi.ToStringMap(labels),
 			},
-		},
-	})
+			Spec: v1beta2.KafkaUserSpecArgs{
+				Authentication: v1beta2.KafkaUserSpecAuthenticationArgs{
+					Type: pulumi.String(strimzitypes.KafkaUserSpecAuthenticationTypeScramSha512),
+				},
+			},
+		})
 	if err != nil {
 		return errors.Wrap(err, "failed to create kafka admin user")
 	}
