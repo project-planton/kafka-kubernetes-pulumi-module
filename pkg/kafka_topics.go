@@ -19,19 +19,21 @@ func kafkaTopics(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernet
 			config[k] = v
 		}
 
-		_, err := v1beta2.NewKafkaTopic(ctx, kafkaTopic.Id, &v1beta2.KafkaTopicArgs{
-			Metadata: metav1.ObjectMetaArgs{
-				Name:      pulumi.String(kafkaTopic.Name),
-				Namespace: createdNamespace.Metadata.Name(),
-				Labels:    pulumi.ToStringMap(labels),
-			},
-			Spec: v1beta2.KafkaTopicSpecArgs{
-				Config:     convertmaps.ConvertGoMapToPulumiMap(config),
-				Partitions: pulumi.Int(kafkaTopic.Partitions),
-				Replicas:   pulumi.Int(kafkaTopic.Replicas),
-				TopicName:  pulumi.String(kafkaTopic.Name),
-			},
-		})
+		_, err := v1beta2.NewKafkaTopic(ctx,
+			kafkaTopic.Name,
+			&v1beta2.KafkaTopicArgs{
+				Metadata: metav1.ObjectMetaArgs{
+					Name:      pulumi.String(kafkaTopic.Name),
+					Namespace: createdNamespace.Metadata.Name(),
+					Labels:    pulumi.ToStringMap(labels),
+				},
+				Spec: v1beta2.KafkaTopicSpecArgs{
+					Config:     convertmaps.ConvertGoMapToPulumiMap(config),
+					Partitions: pulumi.Int(kafkaTopic.Partitions),
+					Replicas:   pulumi.Int(kafkaTopic.Replicas),
+					TopicName:  pulumi.String(kafkaTopic.Name),
+				},
+			})
 		if err != nil {
 			return errors.Wrapf(err, "failed to create kafka-topic %s", kafkaTopic.Id)
 		}
