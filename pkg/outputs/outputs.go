@@ -13,7 +13,6 @@ const (
 	IngressExternalSchemaRegistryUrl = "external-schema-registry-url"
 	IngressInternalSchemaRegistryUrl = "internal-schema-registry-url"
 	IngressExternalKowlUrl           = "external-kowl-url"
-	IngressInternalKowlUrl           = "internal-kowl-url"
 	KafkaSaslUsername                = "kafka-sasl-username"
 )
 
@@ -27,6 +26,5 @@ func PulumiOutputsToStackOutputsConverter(pulumiOutputs auto.OutputMap,
 		ExternalSchemaRegistryUrl:       autoapistackoutput.GetVal(pulumiOutputs, IngressExternalSchemaRegistryUrl),
 		InternalSchemaRegistryUrl:       autoapistackoutput.GetVal(pulumiOutputs, IngressInternalSchemaRegistryUrl),
 		ExternalKowlDashboardUrl:        autoapistackoutput.GetVal(pulumiOutputs, IngressExternalKowlUrl),
-		InternalKowlDashboardUrl:        autoapistackoutput.GetVal(pulumiOutputs, IngressInternalKowlUrl),
 	}
 }

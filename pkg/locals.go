@@ -8,9 +8,11 @@ import (
 )
 
 type Locals struct {
+	Namespace       string
+	KafkaKubernetes *kafkakubernetesmodel.KafkaKubernetes
+
 	IngressCertClusterIssuerName string
 	// bootstrap
-	IngressBootstrapCertSecretName   string
 	IngressExternalBootstrapHostname string
 	IngressInternalBootstrapHostname string
 	IngressExternalBrokerHostnames   []string
@@ -19,13 +21,6 @@ type Locals struct {
 	BootstrapKubeServiceFqdn         string
 	BootstrapKubeServiceName         string
 
-	// kowl dashboard
-	IngressKowlCertSecretName   string
-	IngressExternalKowlHostname string
-	IngressInternalKowlHostname string
-	IngressKowlHostnames        []string
-	KowlKubeServiceFqdn         string
-
 	// schema registry
 	IngressSchemaRegistryCertSecretName   string
 	IngressExternalSchemaRegistryHostname string
@@ -33,8 +28,10 @@ type Locals struct {
 	IngressSchemaRegistryHostnames        []string
 	SchemaRegistryKubeServiceFqdn         string
 
-	Namespace       string
-	KafkaKubernetes *kafkakubernetesmodel.KafkaKubernetes
+	// kowl dashboard
+	IngressKowlCertSecretName   string
+	IngressExternalKowlHostname string
+	KowlKubeServiceFqdn         string
 }
 
 func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesmodel.KafkaKubernetesStackInput) *Locals {
@@ -59,7 +56,7 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesmodel.Kafk
 	if locals.KafkaKubernetes.Spec.SchemaRegistryContainer != nil &&
 		locals.KafkaKubernetes.Spec.SchemaRegistryContainer.IsEnabled {
 
-		locals.IngressSchemaRegistryCertSecretName = fmt.Sprintf("schema-registry-%s", kafkaKubernetes.Metadata.Id)
+		locals.IngressSchemaRegistryCertSecretName = fmt.Sprintf("cert-%s-schema-registry", kafkaKubernetes.Metadata.Id)
 
 		locals.IngressExternalSchemaRegistryHostname = fmt.Sprintf("%s-schema-registry.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
 
@@ -78,19 +75,12 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesmodel.Kafk
 	// kowl related locals data
 	if locals.KafkaKubernetes.Spec.IsKowlDashboardEnabled {
 
-		locals.IngressKowlCertSecretName = fmt.Sprintf("kowl-%s", kafkaKubernetes.Metadata.Id)
+		locals.IngressKowlCertSecretName = fmt.Sprintf("cert-%s-kowl", kafkaKubernetes.Metadata.Id)
 
 		locals.IngressExternalKowlHostname = fmt.Sprintf("%s-kowl.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
 
-		locals.IngressInternalKowlHostname = fmt.Sprintf("%s-kowl-internal.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
-
 		ctx.Export(outputs.IngressExternalKowlUrl, pulumi.Sprintf("https://%s", locals.IngressExternalKowlHostname))
-		ctx.Export(outputs.IngressInternalKowlUrl, pulumi.Sprintf("https://%s", locals.IngressInternalKowlHostname))
 
-		locals.IngressSchemaRegistryHostnames = []string{
-			locals.IngressExternalKowlHostname,
-			locals.IngressInternalKowlHostname,
-		}
 		locals.KowlKubeServiceFqdn = fmt.Sprintf("%s.%s.svc.cluster.local", vars.KowlKubeServiceName, locals.Namespace)
 	}
 
@@ -140,10 +130,6 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesmodel.Kafk
 	//same as the ingress-domain-name as long as the same ingress-domain-name is added to the list of
 	//ingress-domain-names for the GkeCluster/EksCluster/AksCluster spec.
 	locals.IngressCertClusterIssuerName = kafkaKubernetes.Spec.Ingress.EndpointDomainName
-
-	locals.IngressBootstrapCertSecretName = kafkaKubernetes.Metadata.Id
-
-	locals.IngressBootstrapCertSecretName = kafkaKubernetes.Metadata.Id
 
 	return locals
 }

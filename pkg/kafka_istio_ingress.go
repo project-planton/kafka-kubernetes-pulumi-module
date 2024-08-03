@@ -13,7 +13,7 @@ import (
 
 func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace, labels map[string]string) error {
 	//crate new certificate
-	addedCertificate, err := certmanagerv1.NewCertificate(ctx,
+	_, err := certmanagerv1.NewCertificate(ctx,
 		"kafka-ingress-certificate",
 		&certmanagerv1.CertificateArgs{
 			Metadata: metav1.ObjectMetaArgs{
@@ -23,7 +23,7 @@ func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *ku
 			},
 			Spec: certmanagerv1.CertificateSpecArgs{
 				DnsNames:   pulumi.ToStringArray(locals.IngressHostnames),
-				SecretName: pulumi.String(locals.IngressBootstrapCertSecretName),
+				SecretName: pulumi.String(vars.BootstrapServerCertSecretName),
 				IssuerRef: certmanagerv1.CertificateSpecIssuerRefArgs{
 					Kind: pulumi.String("ClusterIssuer"),
 					Name: pulumi.String(locals.IngressCertClusterIssuerName),
@@ -54,8 +54,7 @@ func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *ku
 					},
 					Hosts: pulumi.ToStringArray(locals.IngressHostnames),
 					Tls: &istiov1.GatewaySpecServersTlsArgs{
-						CredentialName: addedCertificate.Spec.SecretName(),
-						Mode:           pulumi.String(v1.ServerTLSSettings_PASSTHROUGH.String()),
+						Mode: pulumi.String(v1.ServerTLSSettings_PASSTHROUGH.String()),
 					},
 				},
 			},

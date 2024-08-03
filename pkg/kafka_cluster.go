@@ -41,7 +41,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 			BrokerCertChainAndKey: &v1beta2.KafkaSpecKafkaListenersConfigurationBrokerCertChainAndKeyArgs{
 				Certificate: pulumi.String("tls.crt"),
 				Key:         pulumi.String("tls.key"),
-				SecretName:  pulumi.String(vars.CertSecretName),
+				SecretName:  pulumi.String(vars.BootstrapServerCertSecretName),
 			},
 		},
 	})
@@ -63,7 +63,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 			BrokerCertChainAndKey: &v1beta2.KafkaSpecKafkaListenersConfigurationBrokerCertChainAndKeyArgs{
 				Certificate: pulumi.String("tls.crt"),
 				Key:         pulumi.String("tls.key"),
-				SecretName:  pulumi.String(vars.CertSecretName),
+				SecretName:  pulumi.String(vars.BootstrapServerCertSecretName),
 			},
 		},
 	})

@@ -38,99 +38,107 @@ func schemaRegistryIstioIngress(ctx *pulumi.Context, locals *Locals, createdName
 	}
 
 	//crate new certificate
-	addedCertificate, err := certmanagerv1.NewCertificate(ctx, "schema-registry-ingress-certificate", &certmanagerv1.CertificateArgs{
-		Metadata: metav1.ObjectMetaArgs{
-			Name:      pulumi.String(fmt.Sprintf("schema-registry-%s", locals.KafkaKubernetes.Metadata.Id)),
-			Namespace: createdNamespace.Metadata.Name(),
-			Labels:    pulumi.ToStringMap(labels),
-		},
-		Spec: certmanagerv1.CertificateSpecArgs{
-			DnsNames:   pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
-			SecretName: pulumi.String(locals.IngressSchemaRegistryCertSecretName),
-			IssuerRef: certmanagerv1.CertificateSpecIssuerRefArgs{
-				Kind: pulumi.String("ClusterIssuer"),
-				Name: pulumi.String(locals.IngressCertClusterIssuerName),
+	addedCertificate, err := certmanagerv1.NewCertificate(ctx,
+		"schema-registry-ingress-certificate",
+		&certmanagerv1.CertificateArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name: pulumi.String(fmt.Sprintf("%s-schema-registry",
+					locals.KafkaKubernetes.Metadata.Id)),
+				Namespace: pulumi.String(vars.IstioIngressNamespace),
+				Labels:    pulumi.ToStringMap(labels),
 			},
-		},
-	}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
+			Spec: certmanagerv1.CertificateSpecArgs{
+				DnsNames:   pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
+				SecretName: pulumi.String(locals.IngressSchemaRegistryCertSecretName),
+				IssuerRef: certmanagerv1.CertificateSpecIssuerRefArgs{
+					Kind: pulumi.String("ClusterIssuer"),
+					Name: pulumi.String(locals.IngressCertClusterIssuerName),
+				},
+			},
+		}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
 	if err != nil {
 		return errors.Wrap(err, "error creating schema registry certificate")
 	}
 
 	//create gateway
-	_, err = istiov1.NewGateway(ctx, "schema-registry-gateway", &istiov1.GatewayArgs{
-		Metadata: metav1.ObjectMetaArgs{
-			Name: pulumi.String(fmt.Sprintf("schema-registry-%s", locals.KafkaKubernetes.Metadata.Id)),
-			//all gateway resources should be created in the istio-ingress deployment namespace
-			Namespace: pulumi.String(vars.IstioIngressNamespace),
-			Labels:    pulumi.ToStringMap(labels),
-		},
-		Spec: istiov1.GatewaySpecArgs{
-			//the selector labels map should match the desired istio-ingress deployment.
-			Selector: pulumi.ToStringMap(vars.IstioIngressSelectorLabels),
-			Servers: istiov1.GatewaySpecServersArray{
-				&istiov1.GatewaySpecServersArgs{
-					Name: pulumi.String("schema-registry-https"),
-					Port: &istiov1.GatewaySpecServersPortArgs{
-						Number:   pulumi.Int(443),
-						Name:     pulumi.String("schema-registry-https"),
-						Protocol: pulumi.String("HTTPS"),
+	_, err = istiov1.NewGateway(ctx,
+		"schema-registry-gateway",
+		&istiov1.GatewayArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name: pulumi.String(fmt.Sprintf("%s-schema-registry", locals.KafkaKubernetes.Metadata.Id)),
+				//all gateway resources should be created in the istio-ingress deployment namespace
+				Namespace: pulumi.String(vars.IstioIngressNamespace),
+				Labels:    pulumi.ToStringMap(labels),
+			},
+			Spec: istiov1.GatewaySpecArgs{
+				//the selector labels map should match the desired istio-ingress deployment.
+				Selector: pulumi.ToStringMap(vars.IstioIngressSelectorLabels),
+				Servers: istiov1.GatewaySpecServersArray{
+					&istiov1.GatewaySpecServersArgs{
+						Name: pulumi.String("schema-registry-https"),
+						Port: &istiov1.GatewaySpecServersPortArgs{
+							Number:   pulumi.Int(443),
+							Name:     pulumi.String("schema-registry-https"),
+							Protocol: pulumi.String("HTTPS"),
+						},
+						Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
+						Tls: &istiov1.GatewaySpecServersTlsArgs{
+							CredentialName: addedCertificate.Spec.SecretName(),
+							Mode:           pulumi.String(v1.ServerTLSSettings_SIMPLE.String()),
+						},
 					},
-					Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
-					Tls: &istiov1.GatewaySpecServersTlsArgs{
-						CredentialName: addedCertificate.Spec.SecretName(),
-						Mode:           pulumi.String(v1.ServerTLSSettings_SIMPLE.String()),
-					},
-				},
-				&istiov1.GatewaySpecServersArgs{
-					Name: pulumi.String("schema-registry-http"),
-					Port: &istiov1.GatewaySpecServersPortArgs{
-						Number:   pulumi.Int(80),
-						Name:     pulumi.String("schema-registry-http"),
-						Protocol: pulumi.String("HTTP"),
-					},
-					Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
-					Tls: &istiov1.GatewaySpecServersTlsArgs{
-						HttpsRedirect: pulumi.Bool(true),
+					&istiov1.GatewaySpecServersArgs{
+						Name: pulumi.String("schema-registry-http"),
+						Port: &istiov1.GatewaySpecServersPortArgs{
+							Number:   pulumi.Int(80),
+							Name:     pulumi.String("schema-registry-http"),
+							Protocol: pulumi.String("HTTP"),
+						},
+						Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
+						Tls: &istiov1.GatewaySpecServersTlsArgs{
+							HttpsRedirect: pulumi.Bool(true),
+						},
 					},
 				},
 			},
-		},
-	}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
+		}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
 	if err != nil {
 		return errors.Wrap(err, "error creating schema registry gateway")
 	}
 
 	//create virtual-service
-	_, err = istiov1.NewVirtualService(ctx, "schema-registry-virtual-service", &istiov1.VirtualServiceArgs{
-		Metadata: metav1.ObjectMetaArgs{
-			Name:      pulumi.String(fmt.Sprintf("schema-registry-%s", locals.KafkaKubernetes.Metadata.Id)),
-			Namespace: createdNamespace.Metadata.Name(),
-			Labels:    pulumi.ToStringMap(labels),
-		},
-		Spec: istiov1.VirtualServiceSpecArgs{
-			Gateways: pulumi.StringArray{
-				pulumi.Sprintf("%s/%s", vars.IstioIngressNamespace, fmt.Sprintf("schema-registry-%s", locals.KafkaKubernetes.Metadata.Id)),
+	_, err = istiov1.NewVirtualService(ctx,
+		"schema-registry-virtual-service",
+		&istiov1.VirtualServiceArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name:      pulumi.String(fmt.Sprintf("%s-schema-registry", locals.KafkaKubernetes.Metadata.Id)),
+				Namespace: createdNamespace.Metadata.Name(),
+				Labels:    pulumi.ToStringMap(labels),
 			},
-			Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
-			Http: istiov1.VirtualServiceSpecHttpArray{
-				&istiov1.VirtualServiceSpecHttpArgs{
-					Name: pulumi.String(fmt.Sprintf("schema-registry-%s", locals.KafkaKubernetes.Metadata.Id)),
-					Route: istiov1.VirtualServiceSpecHttpRouteArray{
-						&istiov1.VirtualServiceSpecHttpRouteArgs{
-							Destination: istiov1.VirtualServiceSpecHttpRouteDestinationArgs{
-								Host: pulumi.String(locals.SchemaRegistryKubeServiceFqdn),
-								Port: istiov1.VirtualServiceSpecHttpRouteDestinationPortArgs{
-									Number: pulumi.Int(80),
+			Spec: istiov1.VirtualServiceSpecArgs{
+				Gateways: pulumi.StringArray{
+					pulumi.Sprintf("%s/%s-schema-registry",
+						vars.IstioIngressNamespace, locals.KafkaKubernetes.Metadata.Id),
+				},
+				Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
+				Http: istiov1.VirtualServiceSpecHttpArray{
+					&istiov1.VirtualServiceSpecHttpArgs{
+						Name: pulumi.String(fmt.Sprintf("%s-schema-registry", locals.KafkaKubernetes.Metadata.Id)),
+						Route: istiov1.VirtualServiceSpecHttpRouteArray{
+							&istiov1.VirtualServiceSpecHttpRouteArgs{
+								Destination: istiov1.VirtualServiceSpecHttpRouteDestinationArgs{
+									Host: pulumi.String(locals.SchemaRegistryKubeServiceFqdn),
+									Port: istiov1.VirtualServiceSpecHttpRouteDestinationPortArgs{
+										Number: pulumi.Int(80),
+									},
 								},
 							},
 						},
 					},
 				},
 			},
-		},
-		Status: nil,
-	}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
+			Status: nil,
+		}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
 	if err != nil {
 		return errors.Wrap(err, "error creating schema virtual-service")
 	}
