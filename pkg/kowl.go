@@ -23,7 +23,7 @@ func kowl(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev
 	}
 
 	kowlConfig, err := file.RenderTemplate(&kowlConfigTemplateInput{
-		BootstrapServerHostname: locals.BootstrapKubeServiceFqdn,
+		BootstrapServerHostname: locals.IngressExternalBootstrapHostname,
 		BootstrapServerPort:     vars.ExternalPublicListenerPortNumber,
 		SaslUsername:            vars.AdminUsername,
 		SchemaRegistryHostname:  locals.SchemaRegistryKubeServiceFqdn,
