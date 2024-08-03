@@ -16,7 +16,7 @@ var vars = struct {
 	SaslPasswordKeyInSecret           string
 	KafkaClusterDefaultConfig         pulumi.Map
 	CertName                          string
-	CertSecretName                    string
+	BootstrapServerCertSecretName     string
 	IstioIngressNamespace             string
 	IstioIngressSelectorLabels        map[string]string
 	KafkaTopicDefaultConfig           map[string]string
@@ -62,13 +62,13 @@ var vars = struct {
 		"auto.create.topics.enable":                pulumi.Bool(true),
 	},
 
-	CertName:       "kafka-ingress",
-	CertSecretName: "cert-kafka-ingress",
+	CertName:                      "kafka-ingress",
+	BootstrapServerCertSecretName: "cert-kafka-ingress",
 
 	IstioIngressNamespace: "istio-ingress",
 	IstioIngressSelectorLabels: map[string]string{
-		"app":   "istio-ingress",
-		"istio": "ingress",
+		"app":   "gateway",
+		"istio": "gateway",
 	},
 
 	KafkaTopicDefaultConfig: map[string]string{
