@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	strimzitypes "github.com/RedHatInsights/strimzi-client-go/apis/kafka.strimzi.io/v1beta2"
 	"github.com/pkg/errors"
 	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -17,10 +16,10 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 		Name: pulumi.String(vars.InternalListenerName),
 		Port: pulumi.Int(vars.InternalListenerPortNumber),
 		Authentication: &v1beta2.KafkaSpecKafkaListenersAuthenticationArgs{
-			Type: pulumi.String(strimzitypes.KafkaSpecKafkaListenersElemAuthenticationTypeScramSha512),
+			Type: pulumi.String("scram-sha-512"),
 		},
 		Tls:  pulumi.Bool(false),
-		Type: pulumi.String(strimzitypes.KafkaSpecKafkaListenersElemTypeInternal),
+		Type: pulumi.String("internal"),
 	})
 
 	//internal listeners
@@ -28,9 +27,9 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 		Name: pulumi.String(vars.ExternalPrivateListenerName),
 		Port: pulumi.Int(vars.ExternalPrivateListenerPortNumber),
 		Tls:  pulumi.Bool(true),
-		Type: pulumi.String(strimzitypes.KafkaSpecKafkaListenersElemTypeIngress),
+		Type: pulumi.String("ingress"),
 		Authentication: &v1beta2.KafkaSpecKafkaListenersAuthenticationArgs{
-			Type: pulumi.String(strimzitypes.KafkaSpecKafkaListenersElemAuthenticationTypeScramSha512),
+			Type: pulumi.String("scram-sha-512"),
 		},
 		Configuration: &v1beta2.KafkaSpecKafkaListenersConfigurationArgs{
 			Bootstrap: &v1beta2.KafkaSpecKafkaListenersConfigurationBootstrapArgs{
@@ -51,9 +50,9 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 		Name: pulumi.String(vars.ExternalPublicListenerName),
 		Port: pulumi.Int(vars.ExternalPublicListenerPortNumber),
 		Tls:  pulumi.Bool(true),
-		Type: pulumi.String(strimzitypes.KafkaSpecKafkaListenersElemTypeIngress),
+		Type: pulumi.String("ingress"),
 		Authentication: &v1beta2.KafkaSpecKafkaListenersAuthenticationArgs{
-			Type: pulumi.String(strimzitypes.KafkaSpecKafkaListenersElemAuthenticationTypeScramSha512),
+			Type: pulumi.String("scram-sha-512"),
 		},
 		Configuration: &v1beta2.KafkaSpecKafkaListenersConfigurationArgs{
 			Bootstrap: &v1beta2.KafkaSpecKafkaListenersConfigurationBootstrapArgs{
@@ -107,7 +106,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 							DeleteClaim: pulumi.Bool(false),
 							Id:          pulumi.Int(0),
 							Size:        pulumi.String(locals.KafkaKubernetes.Spec.BrokerContainer.DiskSize),
-							Type:        pulumi.String(strimzitypes.KafkaSpecKafkaStorageVolumesElemTypePersistentClaim),
+							Type:        pulumi.String("persistent-claim"),
 						},
 					},
 				},
@@ -122,7 +121,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 				Storage: v1beta2.KafkaSpecZookeeperStorageArgs{
 					DeleteClaim: pulumi.Bool(false),
 					Size:        pulumi.String(vars.ZookeeperDefaultDiskSizeInGb),
-					Type:        pulumi.String(strimzitypes.KafkaSpecZookeeperStorageTypePersistentClaim),
+					Type:        pulumi.String("persistent-claim"),
 				},
 			},
 		},

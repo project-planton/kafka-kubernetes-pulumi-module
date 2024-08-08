@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	strimzitypes "github.com/RedHatInsights/strimzi-client-go/apis/kafka.strimzi.io/v1beta2"
 	"github.com/pkg/errors"
 	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -25,7 +24,7 @@ func kafkaAdminUser(ctx *pulumi.Context, locals *Locals, createdNamespace *kuber
 			},
 			Spec: v1beta2.KafkaUserSpecArgs{
 				Authentication: v1beta2.KafkaUserSpecAuthenticationArgs{
-					Type: pulumi.String(strimzitypes.KafkaUserSpecAuthenticationTypeScramSha512),
+					Type: pulumi.String("scram-sha-512"),
 				},
 			},
 		})
