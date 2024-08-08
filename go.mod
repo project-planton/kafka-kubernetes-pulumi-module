@@ -2,8 +2,6 @@ module github.com/plantoncloud/kafka-kubernetes-pulumi-module
 
 go 1.22.0
 
-toolchain go1.22.5
-
 //replace github.com/plantoncloud/planton-cloud-apis => ../../plantoncloud/planton-cloud-apis
 
 //replace github.com/plantoncloud/stack-job-runner-golang-sdk => ../../plantoncloud/stack-job-runner-golang-sdk
