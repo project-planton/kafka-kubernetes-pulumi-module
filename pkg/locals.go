@@ -3,13 +3,13 @@ package pkg
 import (
 	"fmt"
 	"github.com/plantoncloud/kafka-kubernetes-pulumi-module/pkg/outputs"
-	kafkakubernetesmodel "github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes/model"
+	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 type Locals struct {
 	Namespace       string
-	KafkaKubernetes *kafkakubernetesmodel.KafkaKubernetes
+	KafkaKubernetes *kafkakubernetes.KafkaKubernetes
 
 	IngressCertClusterIssuerName string
 	// bootstrap
@@ -34,7 +34,7 @@ type Locals struct {
 	KowlKubeServiceFqdn         string
 }
 
-func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesmodel.KafkaKubernetesStackInput) *Locals {
+func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKubernetesStackInput) *Locals {
 	locals := &Locals{}
 
 	ctx.Export(outputs.KafkaSaslUsername, pulumi.String(vars.AdminUsername))

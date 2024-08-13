@@ -13,10 +13,10 @@ go 1.22.0
 require (
 	github.com/pkg/errors v0.9.1
 	github.com/plantoncloud-inc/go-commons v0.0.0-20240808131925-df6e3fcbfa5b
-	github.com/plantoncloud/kubernetes-crd-pulumi-types v0.0.0-20240728135705-0a8ddbf00a91
-	github.com/plantoncloud/planton-cloud-apis v0.1.0
-	github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240808151947-30fe31a468ca
-	github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.56
+	github.com/plantoncloud/kubernetes-crd-pulumi-types v0.0.0-20240811054507-35b7232001a0
+	github.com/plantoncloud/planton-cloud-apis v0.1.6
+	github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240813091317-49da3b41a14f
+	github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.57
 	github.com/pulumi/pulumi-kubernetes/sdk/v4 v4.15.0
 	github.com/pulumi/pulumi/sdk/v3 v3.127.0
 	istio.io/api v1.22.3
@@ -24,7 +24,7 @@ require (
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.1-20240508200655-46a4cf4ba109.1 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect

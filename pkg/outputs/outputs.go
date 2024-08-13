@@ -1,7 +1,7 @@
 package outputs
 
 import (
-	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes/model"
+	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes"
 	"github.com/plantoncloud/stack-job-runner-golang-sdk/pkg/automationapi/autoapistackoutput"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 )
@@ -17,8 +17,8 @@ const (
 )
 
 func PulumiOutputsToStackOutputsConverter(pulumiOutputs auto.OutputMap,
-	input *model.KafkaKubernetesStackInput) *model.KafkaKubernetesStackOutputs {
-	return &model.KafkaKubernetesStackOutputs{
+	input *kafkakubernetes.KafkaKubernetesStackInput) *kafkakubernetes.KafkaKubernetesStackOutputs {
+	return &kafkakubernetes.KafkaKubernetesStackOutputs{
 		Namespace:                       autoapistackoutput.GetVal(pulumiOutputs, Namespace),
 		KafkaSaslUsername:               autoapistackoutput.GetVal(pulumiOutputs, KafkaSaslUsername),
 		ExternalBootstrapServerHostname: autoapistackoutput.GetVal(pulumiOutputs, IngressExternalBootStrapHostname),
