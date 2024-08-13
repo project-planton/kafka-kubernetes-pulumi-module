@@ -9,7 +9,7 @@ import (
 )
 
 func kafkaAdminUser(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
-	labels map[string]string) error {
+	createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
 
 	//add the label required to create the admin secret for the target kafka-cluster
 	labels["strimzi.io/cluster"] = locals.KafkaKubernetes.Metadata.Id
@@ -27,7 +27,7 @@ func kafkaAdminUser(ctx *pulumi.Context, locals *Locals, createdNamespace *kuber
 					Type: pulumi.String("scram-sha-512"),
 				},
 			},
-		})
+		}, pulumi.Parent(createdKafkaCluster))
 	if err != nil {
 		return errors.Wrap(err, "failed to create kafka admin user")
 	}

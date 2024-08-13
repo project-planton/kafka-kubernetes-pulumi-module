@@ -8,9 +8,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
-	labels map[string]string) error {
-
+func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace, labels map[string]string) (*v1beta2.Kafka, error) {
 	listenersInput := v1beta2.KafkaSpecKafkaListenersArray{}
 	listenersInput = append(listenersInput, v1beta2.KafkaSpecKafkaListenersArgs{
 		Name: pulumi.String(vars.InternalListenerName),
@@ -68,7 +66,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 	})
 
 	// create kafka cluster
-	_, err := v1beta2.NewKafka(ctx, "kafka-cluster", &v1beta2.KafkaArgs{
+	createdKafkaCluster, err := v1beta2.NewKafka(ctx, "kafka-cluster", &v1beta2.KafkaArgs{
 		Metadata: metav1.ObjectMetaArgs{
 			Name:      pulumi.String(locals.KafkaKubernetes.Metadata.Id),
 			Namespace: createdNamespace.Metadata.Name(),
@@ -110,12 +108,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 						},
 					},
 				},
-				Template:      nil,
-				TieredStorage: nil,
-				Version:       nil,
 			},
-			KafkaExporter:          nil,
-			MaintenanceTimeWindows: nil,
 			Zookeeper: v1beta2.KafkaSpecZookeeperArgs{
 				Replicas: pulumi.Int(locals.KafkaKubernetes.Spec.BrokerContainer.Replicas),
 				Storage: v1beta2.KafkaSpecZookeeperStorageArgs{
@@ -125,11 +118,11 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 				},
 			},
 		},
-	})
+	}, pulumi.Parent(createdNamespace))
 	if err != nil {
-		return errors.Wrap(err, "failed to create kafka-cluster")
+		return nil, errors.Wrap(err, "failed to create kafka-cluster")
 	}
-	return nil
+	return createdKafkaCluster, nil
 }
 
 func getBrokerListenersConfig(hostnames []string) v1beta2.KafkaSpecKafkaListenersConfigurationBrokersArray {

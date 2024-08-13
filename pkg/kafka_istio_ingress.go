@@ -5,13 +5,15 @@ import (
 	"github.com/pkg/errors"
 	certmanagerv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/certmanager/certmanager/v1"
 	istiov1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/istio/networking/v1"
+	"github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	metav1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/meta/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	v1 "istio.io/api/networking/v1"
 )
 
-func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace, labels map[string]string) error {
+func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Provider,
+	createdNamespace *kubernetescorev1.Namespace, labels map[string]string) error {
 	//crate new certificate
 	_, err := certmanagerv1.NewCertificate(ctx,
 		"kafka-ingress-certificate",
@@ -29,7 +31,7 @@ func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *ku
 					Name: pulumi.String(locals.IngressCertClusterIssuerName),
 				},
 			},
-		})
+		}, pulumi.Parent(createdNamespace))
 	if err != nil {
 		return errors.Wrap(err, "error creating certificate")
 	}
@@ -59,7 +61,7 @@ func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *ku
 				},
 			},
 		},
-	})
+	}, pulumi.Provider(kubernetesProvider))
 	if err != nil {
 		return errors.Wrap(err, "error creating gateway")
 	}
@@ -144,7 +146,7 @@ func kafkaIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *ku
 				Hosts: pulumi.ToStringArray(locals.IngressHostnames),
 				Tls:   tlsMatchingRoutes,
 			},
-		})
+		}, pulumi.Parent(createdNamespace))
 	if err != nil {
 		return errors.Wrap(err, "error creating virtual-service")
 	}

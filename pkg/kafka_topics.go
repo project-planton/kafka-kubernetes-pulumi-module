@@ -10,7 +10,7 @@ import (
 )
 
 func kafkaTopics(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
-	labels map[string]string) error {
+	createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
 
 	for _, kafkaTopic := range locals.KafkaKubernetes.Spec.KafkaTopics {
 
@@ -33,7 +33,7 @@ func kafkaTopics(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernet
 					Replicas:   pulumi.Int(kafkaTopic.Replicas),
 					TopicName:  pulumi.String(kafkaTopic.Name),
 				},
-			})
+			}, pulumi.Parent(createdKafkaCluster))
 		if err != nil {
 			return errors.Wrapf(err, "failed to create kafka-topic %s", kafkaTopic.Id)
 		}

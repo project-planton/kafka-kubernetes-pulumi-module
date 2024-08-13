@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/plantoncloud-inc/go-commons/util/file"
+	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
 	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/commons/english/enums/englishword"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -11,8 +12,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func kowl(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
-	labels map[string]string) error {
+func kowl(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace, cluster *v1beta2.Kafka, labels map[string]string) error {
 
 	type kowlConfigTemplateInput struct {
 		BootstrapServerHostname string
@@ -33,13 +33,15 @@ func kowl(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev
 		return errors.Wrap(err, "failed to render kowl config file")
 	}
 
-	configMap, err := kubernetescorev1.NewConfigMap(ctx, vars.KowlConfigMapName, &kubernetescorev1.ConfigMapArgs{
-		Data: pulumi.ToStringMap(map[string]string{vars.KowlConfigKeyName: string(kowlConfig)}),
-		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(vars.KowlConfigMapName),
-			Namespace: createdNamespace.Metadata.Name(),
-		},
-	}, pulumi.Parent(createdNamespace))
+	createdConfigMap, err := kubernetescorev1.NewConfigMap(ctx,
+		vars.KowlConfigMapName,
+		&kubernetescorev1.ConfigMapArgs{
+			Data: pulumi.ToStringMap(map[string]string{vars.KowlConfigKeyName: string(kowlConfig)}),
+			Metadata: &metav1.ObjectMetaArgs{
+				Name:      pulumi.String(vars.KowlConfigMapName),
+				Namespace: createdNamespace.Metadata.Name(),
+			},
+		}, pulumi.Parent(createdNamespace))
 	if err != nil {
 		return errors.Wrap(err, "failed to add config-map")
 	}
@@ -68,7 +70,7 @@ func kowl(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev
 					Volumes: kubernetescorev1.VolumeArray{
 						kubernetescorev1.VolumeArgs{
 							ConfigMap: kubernetescorev1.ConfigMapVolumeSourceArgs{
-								Name: configMap.Metadata.Name(),
+								Name: createdConfigMap.Metadata.Name(),
 							},
 							Name: pulumi.String(vars.KowlConfigVolumeName),
 						},
@@ -121,7 +123,8 @@ func kowl(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev
 				},
 			},
 		},
-	}, pulumi.IgnoreChanges([]string{"metadata", "status"}), pulumi.Parent(configMap))
+	}, pulumi.Parent(createdNamespace), pulumi.DependsOn([]pulumi.Resource{createdConfigMap}),
+		pulumi.IgnoreChanges([]string{"metadata", "status"}))
 	if err != nil {
 		return errors.Wrap(err, "failed to add kowl deployment")
 	}

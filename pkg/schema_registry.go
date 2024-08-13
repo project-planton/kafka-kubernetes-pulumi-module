@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"github.com/pkg/errors"
+	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
 	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/commons/english/enums/englishword"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func schemaRegistry(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
-	labels map[string]string) error {
+	createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
 	labels[englishword.EnglishWord_app.String()] = vars.SchemaRegistryDeploymentName
 	_, err := appsv1.NewDeployment(ctx, vars.SchemaRegistryDeploymentName, &appsv1.DeploymentArgs{
 		Metadata: &metav1.ObjectMetaArgs{
@@ -102,11 +103,7 @@ func schemaRegistry(ctx *pulumi.Context, locals *Locals, createdNamespace *kuber
 				},
 			},
 		},
-	}, pulumi.Parent(createdNamespace), pulumi.Timeouts(&pulumi.CustomTimeouts{
-		Create: "10s",
-		Update: "10s",
-		Delete: "10s",
-	}))
+	}, pulumi.Parent(createdKafkaCluster))
 	if err != nil {
 		return errors.Wrap(err, "failed to add deployment")
 	}

@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	certmanagerv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/certmanager/certmanager/v1"
 	istiov1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/istio/networking/v1"
+	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
 	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/commons/english/enums/englishword"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	metav1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/meta/v1"
@@ -12,27 +13,30 @@ import (
 	v1 "istio.io/api/networking/v1"
 )
 
-func schemaRegistryIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace, labels map[string]string) error {
-	svc, err := kubernetescorev1.NewService(ctx, vars.SchemaRegistryDeploymentName, &kubernetescorev1.ServiceArgs{
-		Metadata: metav1.ObjectMetaArgs{
-			Name:      pulumi.String(vars.SchemaRegistryKubeServiceName),
-			Namespace: createdNamespace.Metadata.Name(),
-		},
-		Spec: &kubernetescorev1.ServiceSpecArgs{
-			Type: pulumi.String("ClusterIP"),
-			Selector: pulumi.StringMap{
-				englishword.EnglishWord_app.String(): pulumi.String(vars.SchemaRegistryDeploymentName),
+func schemaRegistryIstioIngress(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
+	createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
+	createdService, err := kubernetescorev1.NewService(ctx,
+		vars.SchemaRegistryDeploymentName,
+		&kubernetescorev1.ServiceArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name:      pulumi.String(vars.SchemaRegistryKubeServiceName),
+				Namespace: createdNamespace.Metadata.Name(),
 			},
-			Ports: kubernetescorev1.ServicePortArray{
-				&kubernetescorev1.ServicePortArgs{
-					Name:       pulumi.String("http"),
-					Protocol:   pulumi.String("TCP"),
-					Port:       pulumi.Int(80),
-					TargetPort: pulumi.Int(vars.SchemaRegistryContainerPort),
+			Spec: &kubernetescorev1.ServiceSpecArgs{
+				Type: pulumi.String("ClusterIP"),
+				Selector: pulumi.StringMap{
+					englishword.EnglishWord_app.String(): pulumi.String(vars.SchemaRegistryDeploymentName),
+				},
+				Ports: kubernetescorev1.ServicePortArray{
+					&kubernetescorev1.ServicePortArgs{
+						Name:       pulumi.String("http"),
+						Protocol:   pulumi.String("TCP"),
+						Port:       pulumi.Int(80),
+						TargetPort: pulumi.Int(vars.SchemaRegistryContainerPort),
+					},
 				},
 			},
-		},
-	}, pulumi.Parent(createdNamespace))
+		}, pulumi.Parent(createdKafkaCluster))
 	if err != nil {
 		return errors.Wrapf(err, "failed to add schema registry service")
 	}
@@ -55,7 +59,7 @@ func schemaRegistryIstioIngress(ctx *pulumi.Context, locals *Locals, createdName
 					Name: pulumi.String(locals.IngressCertClusterIssuerName),
 				},
 			},
-		}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
+		}, pulumi.Parent(createdKafkaCluster))
 	if err != nil {
 		return errors.Wrap(err, "error creating schema registry certificate")
 	}
@@ -101,7 +105,7 @@ func schemaRegistryIstioIngress(ctx *pulumi.Context, locals *Locals, createdName
 					},
 				},
 			},
-		}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
+		}, pulumi.Parent(createdKafkaCluster), pulumi.DependsOn([]pulumi.Resource{createdService}))
 	if err != nil {
 		return errors.Wrap(err, "error creating schema registry gateway")
 	}
@@ -137,8 +141,7 @@ func schemaRegistryIstioIngress(ctx *pulumi.Context, locals *Locals, createdName
 					},
 				},
 			},
-			Status: nil,
-		}, pulumi.DependsOn([]pulumi.Resource{svc}), pulumi.Parent(svc))
+		}, pulumi.Parent(createdKafkaCluster), pulumi.DependsOn([]pulumi.Resource{createdService}))
 	if err != nil {
 		return errors.Wrap(err, "error creating schema virtual-service")
 	}
