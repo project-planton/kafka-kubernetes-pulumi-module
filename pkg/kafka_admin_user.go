@@ -12,7 +12,7 @@ func kafkaAdminUser(ctx *pulumi.Context, locals *Locals, createdNamespace *kuber
 	createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
 
 	//add the label required to create the admin secret for the target kafka-cluster
-	labels["strimzi.io/cluster"] = locals.KafkaKubernetes.Metadata.Id
+	labels[vars.ClusterLabelKey] = locals.KafkaKubernetes.Metadata.Id
 
 	_, err := v1beta2.NewKafkaUser(ctx,
 		"admin-user",

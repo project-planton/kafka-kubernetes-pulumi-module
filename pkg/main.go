@@ -56,33 +56,18 @@ func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
 		return errors.Wrap(err, "failed to create kafka topics")
 	}
 
-	//create kafka istio ingress
-	if locals.KafkaKubernetes.Spec.Ingress.IsEnabled {
-		if err := kafkaIstioIngress(ctx, locals, kubernetesProvider, createdNamespace, s.Labels); err != nil {
-			return errors.Wrap(err, "failed to create kafka istio ingress")
-		}
-	}
-
 	//create schema-registry
 	if locals.KafkaKubernetes.Spec.SchemaRegistryContainer != nil &&
 		locals.KafkaKubernetes.Spec.SchemaRegistryContainer.IsEnabled {
-		if err := schemaRegistry(ctx, locals, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
+		if err := schemaRegistry(ctx, locals, kubernetesProvider, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
 			return errors.Wrap(err, "failed to create schema registry deployment")
-		}
-
-		if err := schemaRegistryIstioIngress(ctx, locals, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
-			return errors.Wrap(err, "failed to create schema registry ingress")
 		}
 	}
 
 	//create kowl
 	if locals.KafkaKubernetes.Spec.IsKowlDashboardEnabled {
-		if err := kowl(ctx, locals, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
+		if err := kowl(ctx, locals, kubernetesProvider, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
 			return errors.Wrap(err, "failed to create kowl deployment")
-		}
-
-		if err := kowlIstioIngress(ctx, locals, kubernetesProvider, createdNamespace, s.Labels); err != nil {
-			return errors.Wrap(err, "failed to create kowl ingress")
 		}
 	}
 	return nil

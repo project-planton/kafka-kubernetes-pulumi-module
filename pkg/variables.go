@@ -3,6 +3,7 @@ package pkg
 import "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 var vars = struct {
+	ExternalDnsHostnameAnnotationKey  string
 	ExternalPublicListenerName        string
 	ExternalPublicListenerPortNumber  int
 	ExternalPrivateListenerName       string
@@ -16,7 +17,7 @@ var vars = struct {
 	SaslPasswordKeyInSecret           string
 	KafkaClusterDefaultConfig         pulumi.Map
 	CertName                          string
-	BootstrapServerCertSecretName     string
+	CertSecretName                    string
 	IstioIngressNamespace             string
 	IstioIngressSelectorLabels        map[string]string
 	KafkaTopicDefaultConfig           map[string]string
@@ -43,6 +44,7 @@ var vars = struct {
 	KowlMemoryRequests              string
 	KowlMemoryLimits                string
 }{
+	ExternalDnsHostnameAnnotationKey:  "external-dns.alpha.kubernetes.io/hostname",
 	ExternalPublicListenerName:        "extpub",
 	ExternalPublicListenerPortNumber:  9092, //this port is intended to be used by clients output the private network and outside the container cluster
 	ExternalPrivateListenerName:       "extpvt",
@@ -62,14 +64,8 @@ var vars = struct {
 		"auto.create.topics.enable":                pulumi.Bool(true),
 	},
 
-	CertName:                      "kafka-ingress",
-	BootstrapServerCertSecretName: "cert-kafka-ingress",
-
-	IstioIngressNamespace: "istio-ingress",
-	IstioIngressSelectorLabels: map[string]string{
-		"app":   "gateway",
-		"istio": "gateway",
-	},
+	CertName:       "kafka-ingress",
+	CertSecretName: "cert-kafka-ingress",
 
 	KafkaTopicDefaultConfig: map[string]string{
 		"cleanup.policy":                      "delete",

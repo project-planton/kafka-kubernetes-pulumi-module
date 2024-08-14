@@ -1,10 +1,14 @@
 package pkg
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
+	certmanagerv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/certmanager/certmanager/v1"
+	istiov1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/istio/networking/v1"
 	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
-	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/commons/english/enums/englishword"
+	"github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
+	v1 "istio.io/api/networking/v1"
 
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -13,9 +17,12 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 )
 
-func schemaRegistry(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
-	createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
-	labels[englishword.EnglishWord_app.String()] = vars.SchemaRegistryDeploymentName
+func schemaRegistry(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Provider,
+	createdNamespace *kubernetescorev1.Namespace, createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
+
+	labels["app"] = vars.SchemaRegistryDeploymentName
+
+	//create schema-registry deployment
 	_, err := appsv1.NewDeployment(ctx, vars.SchemaRegistryDeploymentName, &appsv1.DeploymentArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(vars.SchemaRegistryDeploymentName),
@@ -26,13 +33,13 @@ func schemaRegistry(ctx *pulumi.Context, locals *Locals, createdNamespace *kuber
 			Replicas: pulumi.Int(1),
 			Selector: &metav1.LabelSelectorArgs{
 				MatchLabels: pulumi.StringMap{
-					englishword.EnglishWord_app.String(): pulumi.String(vars.SchemaRegistryDeploymentName),
+					"app": pulumi.String(vars.SchemaRegistryDeploymentName),
 				},
 			},
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
 					Labels: pulumi.StringMap{
-						englishword.EnglishWord_app.String(): pulumi.String(vars.SchemaRegistryDeploymentName),
+						"app": pulumi.String(vars.SchemaRegistryDeploymentName),
 					},
 				},
 				Spec: &corev1.PodSpecArgs{
@@ -104,6 +111,144 @@ func schemaRegistry(ctx *pulumi.Context, locals *Locals, createdNamespace *kuber
 			},
 		},
 	}, pulumi.Parent(createdKafkaCluster))
+
+	//create kubernetes service
+	createdService, err := kubernetescorev1.NewService(ctx,
+		vars.SchemaRegistryDeploymentName,
+		&kubernetescorev1.ServiceArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name:      pulumi.String(vars.SchemaRegistryKubeServiceName),
+				Namespace: createdNamespace.Metadata.Name(),
+			},
+			Spec: &kubernetescorev1.ServiceSpecArgs{
+				Type: pulumi.String("ClusterIP"),
+				Selector: pulumi.StringMap{
+					"app": pulumi.String(vars.SchemaRegistryDeploymentName),
+				},
+				Ports: kubernetescorev1.ServicePortArray{
+					&kubernetescorev1.ServicePortArgs{
+						Name:       pulumi.String("http"),
+						Protocol:   pulumi.String("TCP"),
+						Port:       pulumi.Int(80),
+						TargetPort: pulumi.Int(vars.SchemaRegistryContainerPort),
+					},
+				},
+			},
+		}, pulumi.Parent(createdKafkaCluster))
+	if err != nil {
+		return errors.Wrapf(err, "failed to add schema registry service")
+	}
+
+	if !locals.KafkaKubernetes.Spec.Ingress.IsEnabled {
+		//skip creating ingress for schema-registry if the ingress is not enabled for kafka itself.
+		return nil
+	}
+
+	//crate new certificate
+	addedCertificate, err := certmanagerv1.NewCertificate(ctx,
+		"schema-registry-ingress-certificate",
+		&certmanagerv1.CertificateArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name: pulumi.String(fmt.Sprintf("%s-schema-registry",
+					locals.KafkaKubernetes.Metadata.Id)),
+				Namespace: pulumi.String(vars.IstioIngressNamespace),
+				Labels:    pulumi.ToStringMap(labels),
+			},
+			Spec: certmanagerv1.CertificateSpecArgs{
+				DnsNames:   pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
+				SecretName: pulumi.String(locals.IngressSchemaRegistryCertSecretName),
+				IssuerRef: certmanagerv1.CertificateSpecIssuerRefArgs{
+					Kind: pulumi.String("ClusterIssuer"),
+					Name: pulumi.String(locals.IngressCertClusterIssuerName),
+				},
+			},
+		}, pulumi.Provider(kubernetesProvider))
+	if err != nil {
+		return errors.Wrap(err, "error creating schema registry certificate")
+	}
+
+	//create gateway
+	_, err = istiov1.NewGateway(ctx,
+		"schema-registry-gateway",
+		&istiov1.GatewayArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name: pulumi.String(fmt.Sprintf("%s-schema-registry", locals.KafkaKubernetes.Metadata.Id)),
+				//all gateway resources should be created in the istio-ingress deployment namespace
+				Namespace: pulumi.String(vars.IstioIngressNamespace),
+				Labels:    pulumi.ToStringMap(labels),
+			},
+			Spec: istiov1.GatewaySpecArgs{
+				//the selector labels map should match the desired istio-ingress deployment.
+				Selector: pulumi.ToStringMap(vars.IstioIngressSelectorLabels),
+				Servers: istiov1.GatewaySpecServersArray{
+					&istiov1.GatewaySpecServersArgs{
+						Name: pulumi.String("schema-registry-https"),
+						Port: &istiov1.GatewaySpecServersPortArgs{
+							Number:   pulumi.Int(443),
+							Name:     pulumi.String("schema-registry-https"),
+							Protocol: pulumi.String("HTTPS"),
+						},
+						Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
+						Tls: &istiov1.GatewaySpecServersTlsArgs{
+							CredentialName: addedCertificate.Spec.SecretName(),
+							Mode:           pulumi.String(v1.ServerTLSSettings_SIMPLE.String()),
+						},
+					},
+					&istiov1.GatewaySpecServersArgs{
+						Name: pulumi.String("schema-registry-http"),
+						Port: &istiov1.GatewaySpecServersPortArgs{
+							Number:   pulumi.Int(80),
+							Name:     pulumi.String("schema-registry-http"),
+							Protocol: pulumi.String("HTTP"),
+						},
+						Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
+						Tls: &istiov1.GatewaySpecServersTlsArgs{
+							HttpsRedirect: pulumi.Bool(true),
+						},
+					},
+				},
+			},
+		}, pulumi.Parent(createdKafkaCluster), pulumi.DependsOn([]pulumi.Resource{createdService}))
+	if err != nil {
+		return errors.Wrap(err, "error creating schema registry gateway")
+	}
+
+	//create virtual-service
+	_, err = istiov1.NewVirtualService(ctx,
+		"schema-registry-virtual-service",
+		&istiov1.VirtualServiceArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name:      pulumi.String(fmt.Sprintf("%s-schema-registry", locals.KafkaKubernetes.Metadata.Id)),
+				Namespace: createdNamespace.Metadata.Name(),
+				Labels:    pulumi.ToStringMap(labels),
+			},
+			Spec: istiov1.VirtualServiceSpecArgs{
+				Gateways: pulumi.StringArray{
+					pulumi.Sprintf("%s/%s-schema-registry",
+						vars.IstioIngressNamespace, locals.KafkaKubernetes.Metadata.Id),
+				},
+				Hosts: pulumi.ToStringArray(locals.IngressSchemaRegistryHostnames),
+				Http: istiov1.VirtualServiceSpecHttpArray{
+					&istiov1.VirtualServiceSpecHttpArgs{
+						Name: pulumi.String(fmt.Sprintf("%s-schema-registry", locals.KafkaKubernetes.Metadata.Id)),
+						Route: istiov1.VirtualServiceSpecHttpRouteArray{
+							&istiov1.VirtualServiceSpecHttpRouteArgs{
+								Destination: istiov1.VirtualServiceSpecHttpRouteDestinationArgs{
+									Host: pulumi.String(locals.SchemaRegistryKubeServiceFqdn),
+									Port: istiov1.VirtualServiceSpecHttpRouteDestinationPortArgs{
+										Number: pulumi.Int(80),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, pulumi.Parent(createdKafkaCluster), pulumi.DependsOn([]pulumi.Resource{createdService}))
+	if err != nil {
+		return errors.Wrap(err, "error creating schema virtual-service")
+	}
+
 	if err != nil {
 		return errors.Wrap(err, "failed to add deployment")
 	}
