@@ -5,33 +5,33 @@ import (
 	"github.com/pkg/errors"
 	"github.com/plantoncloud-inc/go-commons/util/file"
 	certmanagerv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/certmanager/certmanager/v1"
-	istiov1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/istio/networking/v1"
+	gatewayv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/gatewayapis/gateway/v1"
 	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
 	"github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	metav1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/meta/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	v1 "istio.io/api/networking/v1"
 )
 
 func kowl(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Provider,
-	createdNamespace *kubernetescorev1.Namespace, createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
+	createdNamespace *kubernetescorev1.Namespace,
+	createdKafkaCluster *v1beta2.Kafka) error {
 
 	type kowlConfigTemplateInput struct {
-		BootstrapServerHostname string
-		BootstrapServerPort     int
-		SaslUsername            string
-		SchemaRegistryHostname  string
-		RefreshIntervalMinutes  int
+		BootstrapKubeServiceFqdn       string
+		BootstrapServerKubeServicePort int
+		SaslUsername                   string
+		SchemaRegistryHostname         string
+		RefreshIntervalMinutes         int
 	}
 
 	kowlConfig, err := file.RenderTemplate(&kowlConfigTemplateInput{
-		BootstrapServerHostname: locals.IngressExternalBootstrapHostname,
-		BootstrapServerPort:     vars.ExternalPublicListenerPortNumber,
-		SaslUsername:            vars.AdminUsername,
-		SchemaRegistryHostname:  locals.SchemaRegistryKubeServiceFqdn,
-		RefreshIntervalMinutes:  vars.KowlRefreshIntervalMinutes,
+		BootstrapKubeServiceFqdn:       locals.BootstrapKubeServiceFqdn,
+		BootstrapServerKubeServicePort: vars.InternalListenerPortNumber,
+		SaslUsername:                   vars.AdminUsername,
+		SchemaRegistryHostname:         locals.SchemaRegistryKubeServiceFqdn,
+		RefreshIntervalMinutes:         vars.KowlRefreshIntervalMinutes,
 	}, vars.KowlConfigFileTemplate)
 	if err != nil {
 		return errors.Wrap(err, "failed to render kowl config file")
@@ -50,6 +50,7 @@ func kowl(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Pr
 		return errors.Wrap(err, "failed to add config-map")
 	}
 
+	labels := locals.KubernetesLabels
 	labels["app"] = vars.KowlDeploymentName
 
 	_, err = appsv1.NewDeployment(ctx, vars.KowlDeploymentName, &appsv1.DeploymentArgs{
@@ -128,7 +129,8 @@ func kowl(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Pr
 				},
 			},
 		},
-	}, pulumi.Parent(createdNamespace), pulumi.DependsOn([]pulumi.Resource{createdKafkaCluster, createdConfigMap}),
+	},
+		pulumi.Parent(createdNamespace), pulumi.DependsOn([]pulumi.Resource{createdKafkaCluster, createdConfigMap}),
 		pulumi.IgnoreChanges([]string{"metadata", "status"}))
 	if err != nil {
 		return errors.Wrap(err, "failed to add kowl deployment")
@@ -190,93 +192,103 @@ func kowl(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Pr
 		return errors.Wrap(err, "error creating kowl certificate")
 	}
 
-	//create gateway
-	_, err = istiov1.NewGateway(ctx,
-		"kowl-gateway",
-		&istiov1.GatewayArgs{
+	// create external gateway
+	createdGateway, err := gatewayv1.NewGateway(ctx,
+		"kowl",
+		&gatewayv1.GatewayArgs{
 			Metadata: metav1.ObjectMetaArgs{
-				Name: pulumi.String(fmt.Sprintf("%s-kowl", locals.KafkaKubernetes.Metadata.Id)),
-				//all gateway resources should be created in the istio-ingress deployment namespace
+				Name: pulumi.Sprintf("%s-kowl-external", locals.KafkaKubernetes.Metadata.Id),
+				// All gateway resources should be created in the ingress deployment namespace
 				Namespace: pulumi.String(vars.IstioIngressNamespace),
 				Labels:    pulumi.ToStringMap(labels),
 			},
-			Spec: istiov1.GatewaySpecArgs{
-				//the selector labels map should match the desired istio-ingress deployment.
-				Selector: pulumi.ToStringMap(vars.IstioIngressSelectorLabels),
-				Servers: istiov1.GatewaySpecServersArray{
-					&istiov1.GatewaySpecServersArgs{
-						Name: pulumi.String("kowl-https"),
-						Port: &istiov1.GatewaySpecServersPortArgs{
-							Number:   pulumi.Int(443),
-							Name:     pulumi.String("kowl-https"),
-							Protocol: pulumi.String("HTTPS"),
-						},
-						Hosts: pulumi.StringArray{
-							pulumi.String(locals.IngressExternalKowlHostname),
-						},
-						Tls: &istiov1.GatewaySpecServersTlsArgs{
-							CredentialName: addedCertificate.Spec.SecretName(),
-							Mode:           pulumi.String(v1.ServerTLSSettings_SIMPLE.String()),
-						},
-					},
-					&istiov1.GatewaySpecServersArgs{
-						Name: pulumi.String("kowl-http"),
-						Port: &istiov1.GatewaySpecServersPortArgs{
-							Number:   pulumi.Int(80),
-							Name:     pulumi.String("kowl-http"),
-							Protocol: pulumi.String("HTTP"),
-						},
-						Hosts: pulumi.StringArray{
-							pulumi.String(locals.IngressExternalKowlHostname),
-						},
-						Tls: &istiov1.GatewaySpecServersTlsArgs{
-							HttpsRedirect: pulumi.Bool(true),
-						},
+			Spec: gatewayv1.GatewaySpecArgs{
+				GatewayClassName: pulumi.String(vars.GatewayIngressClassName),
+				Addresses: pulumi.Array{
+					pulumi.Map{
+						"type":  pulumi.String("Hostname"),
+						"value": pulumi.String(vars.GatewayExternalLoadBalancerServiceHostname),
 					},
 				},
-			},
-		}, pulumi.Provider(kubernetesProvider), pulumi.DependsOn([]pulumi.Resource{createdService}))
-	if err != nil {
-		return errors.Wrap(err, "error creating kowl gateway")
-	}
-
-	//create virtual-service
-	_, err = istiov1.NewVirtualService(ctx,
-		"kowl-virtual-service",
-		&istiov1.VirtualServiceArgs{
-			Metadata: metav1.ObjectMetaArgs{
-				Name:      pulumi.String(fmt.Sprintf("%s-kowl", locals.KafkaKubernetes.Metadata.Id)),
-				Namespace: createdNamespace.Metadata.Name(),
-				Labels:    pulumi.ToStringMap(labels),
-			},
-			Spec: istiov1.VirtualServiceSpecArgs{
-				Gateways: pulumi.StringArray{
-					pulumi.Sprintf("%s/%s-kowl",
-						vars.IstioIngressNamespace, locals.KafkaKubernetes.Metadata.Id),
-				},
-				Hosts: pulumi.StringArray{
-					pulumi.String(locals.IngressExternalKowlHostname),
-				},
-				Http: istiov1.VirtualServiceSpecHttpArray{
-					&istiov1.VirtualServiceSpecHttpArgs{
-						Name: pulumi.String(fmt.Sprintf("%s-kowl", locals.KafkaKubernetes.Metadata.Id)),
-						Route: istiov1.VirtualServiceSpecHttpRouteArray{
-							&istiov1.VirtualServiceSpecHttpRouteArgs{
-								Destination: istiov1.VirtualServiceSpecHttpRouteDestinationArgs{
-									Host: pulumi.String(locals.KowlKubeServiceFqdn),
-									Port: istiov1.VirtualServiceSpecHttpRouteDestinationPortArgs{
-										Number: pulumi.Int(80),
-									},
+				Listeners: gatewayv1.GatewaySpecListenersArray{
+					&gatewayv1.GatewaySpecListenersArgs{
+						Name:     pulumi.String("https-external"),
+						Hostname: pulumi.String(locals.IngressExternalKowlHostname),
+						Port:     pulumi.Int(443),
+						Protocol: pulumi.String("HTTPS"),
+						Tls: &gatewayv1.GatewaySpecListenersTlsArgs{
+							Mode: pulumi.String("Terminate"),
+							CertificateRefs: gatewayv1.GatewaySpecListenersTlsCertificateRefsArray{
+								gatewayv1.GatewaySpecListenersTlsCertificateRefsArgs{
+									Name: pulumi.String(locals.IngressKowlCertSecretName),
 								},
+							},
+						},
+						AllowedRoutes: gatewayv1.GatewaySpecListenersAllowedRoutesArgs{
+							Namespaces: gatewayv1.GatewaySpecListenersAllowedRoutesNamespacesArgs{
+								From: pulumi.String("All"),
+							},
+						},
+					},
+					&gatewayv1.GatewaySpecListenersArgs{
+						Name:     pulumi.String("http-external"),
+						Hostname: pulumi.String(locals.IngressExternalKowlHostname),
+						Port:     pulumi.Int(80),
+						Protocol: pulumi.String("HTTP"),
+						AllowedRoutes: gatewayv1.GatewaySpecListenersAllowedRoutesArgs{
+							Namespaces: gatewayv1.GatewaySpecListenersAllowedRoutesNamespacesArgs{
+								From: pulumi.String("All"),
 							},
 						},
 					},
 				},
 			},
-		}, pulumi.Parent(createdNamespace),
-		pulumi.DependsOn([]pulumi.Resource{createdService}))
+		}, pulumi.DependsOn([]pulumi.Resource{addedCertificate}))
 	if err != nil {
-		return errors.Wrap(err, "error creating schema virtual-service")
+		return errors.Wrap(err, "error creating gateway for kowl")
+	}
+
+	// Create HTTP route for external hostname
+	_, err = gatewayv1.NewHTTPRoute(ctx,
+		"kowl",
+		&gatewayv1.HTTPRouteArgs{
+			Metadata: metav1.ObjectMetaArgs{
+				Name:      pulumi.String("kowl"),
+				Namespace: createdNamespace.Metadata.Name(),
+				Labels:    pulumi.ToStringMap(labels),
+			},
+			Spec: gatewayv1.HTTPRouteSpecArgs{
+				Hostnames: pulumi.StringArray{pulumi.String(locals.IngressExternalKowlHostname)},
+				ParentRefs: gatewayv1.HTTPRouteSpecParentRefsArray{
+					gatewayv1.HTTPRouteSpecParentRefsArgs{
+						Name:      pulumi.Sprintf("%s-kowl-external", locals.KafkaKubernetes.Metadata.Id),
+						Namespace: createdGateway.Metadata.Namespace(),
+					},
+				},
+				Rules: gatewayv1.HTTPRouteSpecRulesArray{
+					gatewayv1.HTTPRouteSpecRulesArgs{
+						Matches: gatewayv1.HTTPRouteSpecRulesMatchesArray{
+							gatewayv1.HTTPRouteSpecRulesMatchesArgs{
+								Path: gatewayv1.HTTPRouteSpecRulesMatchesPathArgs{
+									Type:  pulumi.String("PathPrefix"),
+									Value: pulumi.String("/"),
+								},
+							},
+						},
+						BackendRefs: gatewayv1.HTTPRouteSpecRulesBackendRefsArray{
+							gatewayv1.HTTPRouteSpecRulesBackendRefsArgs{
+								Name:      pulumi.String(vars.KowlKubeServiceName),
+								Namespace: createdNamespace.Metadata.Name(),
+								Port:      pulumi.Int(80),
+							},
+						},
+					},
+				},
+			},
+		}, pulumi.Parent(createdNamespace), pulumi.DependsOn([]pulumi.Resource{createdService}))
+
+	if err != nil {
+		return errors.Wrap(err, "error creating HTTP route for kowl")
 	}
 
 	return nil

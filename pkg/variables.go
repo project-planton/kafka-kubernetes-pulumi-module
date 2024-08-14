@@ -3,46 +3,48 @@ package pkg
 import "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 var vars = struct {
-	ExternalDnsHostnameAnnotationKey  string
-	ExternalPublicListenerName        string
-	ExternalPublicListenerPortNumber  int
-	ExternalPrivateListenerName       string
-	ExternalPrivateListenerPortNumber int
-	InternalListenerName              string
-	InternalListenerPortNumber        int
-	AdminUsername                     string
-	ClusterLabelKey                   string
-	SaslPasswordSecretName            string
-	SaslJaasConfigKeyInSecret         string
-	SaslPasswordKeyInSecret           string
-	KafkaClusterDefaultConfig         pulumi.Map
-	CertName                          string
-	CertSecretName                    string
-	IstioIngressNamespace             string
-	IstioIngressSelectorLabels        map[string]string
-	KafkaTopicDefaultConfig           map[string]string
-	ZookeeperDefaultDiskSizeInGb      string
-	SchemaRegistryDockerImage         string
-	SchemaRegistryContainerPort       int
-	SchemaRegistryKafkaStoreTopicName string
-	SchemaRegistryDeploymentName      string
-	SchemaRegistryKubeServiceName     string
+	ExternalDnsHostnameAnnotationKey     string
+	ExternalPublicListenerName           string
+	ExternalPublicListenerPortNumber     int
+	ExternalPrivateListenerName          string
+	ExternalPrivateListenerPortNumber    int
+	InternalListenerName                 string
+	InternalListenerPortNumber           int
+	AdminUsername                        string
+	ClusterLabelKey                      string
+	SaslPasswordSecretName               string
+	SaslJaasConfigKeyInSecret            string
+	SaslPasswordKeyInSecret              string
+	KafkaClusterDefaultConfig            pulumi.Map
+	BootstrapServerIngressCertName       string
+	BootstrapServerIngressCertSecretName string
+	IstioIngressNamespace                string
+	IstioIngressSelectorLabels           map[string]string
+	KafkaTopicDefaultConfig              map[string]string
+	ZookeeperDefaultDiskSizeInGb         string
+	SchemaRegistryDockerImage            string
+	SchemaRegistryContainerPort          int
+	SchemaRegistryKafkaStoreTopicName    string
+	SchemaRegistryDeploymentName         string
+	SchemaRegistryKubeServiceName        string
 
-	KowlKubeServiceName             string
-	KowlConfigMapName               string
-	KowlConfigKeyName               string
-	KowlRefreshIntervalMinutes      int
-	KowlConfigFileTemplate          string
-	KowlDeploymentName              string
-	KowlDockerImage                 string
-	KowlContainerPort               int
-	KowlEnvVarNameKafkaSaslPassword string
-	KowlConfigVolumeName            string
-	KowlConfigVolumeMountPath       string
-	KowlCpuRequests                 string
-	KowlCpuLimits                   string
-	KowlMemoryRequests              string
-	KowlMemoryLimits                string
+	KowlKubeServiceName                        string
+	KowlConfigMapName                          string
+	KowlConfigKeyName                          string
+	KowlRefreshIntervalMinutes                 int
+	KowlConfigFileTemplate                     string
+	KowlDeploymentName                         string
+	KowlDockerImage                            string
+	KowlContainerPort                          int
+	KowlEnvVarNameKafkaSaslPassword            string
+	KowlConfigVolumeName                       string
+	KowlConfigVolumeMountPath                  string
+	KowlCpuRequests                            string
+	KowlCpuLimits                              string
+	KowlMemoryRequests                         string
+	KowlMemoryLimits                           string
+	GatewayExternalLoadBalancerServiceHostname string
+	GatewayIngressClassName                    string
 }{
 	ExternalDnsHostnameAnnotationKey:  "external-dns.alpha.kubernetes.io/hostname",
 	ExternalPublicListenerName:        "extpub",
@@ -57,6 +59,10 @@ var vars = struct {
 	SaslJaasConfigKeyInSecret:         "sasl.jaas.config",
 	SaslPasswordKeyInSecret:           "password",
 
+	GatewayExternalLoadBalancerServiceHostname: "ingress-external.istio-ingress.svc.cluster.local",
+	GatewayIngressClassName:                    "istio",
+	IstioIngressNamespace:                      "istio-ingress",
+
 	KafkaClusterDefaultConfig: pulumi.Map{
 		"offsets.topic.replication.factor":         pulumi.Int(1),
 		"transaction.state.log.replication.factor": pulumi.Int(1),
@@ -64,8 +70,8 @@ var vars = struct {
 		"auto.create.topics.enable":                pulumi.Bool(true),
 	},
 
-	CertName:       "kafka-ingress",
-	CertSecretName: "cert-kafka-ingress",
+	BootstrapServerIngressCertName:       "kafka-ingress",
+	BootstrapServerIngressCertSecretName: "cert-kafka-ingress",
 
 	KafkaTopicDefaultConfig: map[string]string{
 		"cleanup.policy":                      "delete",
@@ -93,14 +99,14 @@ var vars = struct {
 	KowlConfigFileTemplate: `
 kafka:
   brokers:
-    - {{.BootstrapServerHostname}}
+    - {{.BootstrapKubeServiceFqdn}}:{{.BootstrapServerKubeServicePort}}
   clientId: kowl-on-cluster
   sasl:
     enabled: true
     username: "{{.SaslUsername}}"
     mechanism: SCRAM-SHA-512
   tls:
-    enabled: true
+    enabled: false
   schemaRegistry:
     enabled: true
     urls: ["http://{{.SchemaRegistryHostname}}"]

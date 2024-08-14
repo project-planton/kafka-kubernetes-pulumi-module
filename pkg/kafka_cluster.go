@@ -2,13 +2,15 @@ package pkg
 
 import (
 	"github.com/pkg/errors"
+	certmanagerv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/certmanager/certmanager/v1"
 	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	metav1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/meta/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace, labels map[string]string) (*v1beta2.Kafka, error) {
+func kafkaCluster(ctx *pulumi.Context, locals *Locals,
+	createdNamespace *kubernetescorev1.Namespace) (*v1beta2.Kafka, error) {
 	listenersArray := v1beta2.KafkaSpecKafkaListenersArray{}
 
 	listenersArray = append(listenersArray,
@@ -24,6 +26,27 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 
 	if locals.KafkaKubernetes.Spec.Ingress.IsEnabled {
 		listenersArray = append(listenersArray, getIngressListeners(locals)...)
+		//crate new certificate
+		_, err := certmanagerv1.NewCertificate(ctx,
+			"kafka-ingress-certificate",
+			&certmanagerv1.CertificateArgs{
+				Metadata: metav1.ObjectMetaArgs{
+					Name:      pulumi.String(locals.KafkaKubernetes.Metadata.Id),
+					Namespace: createdNamespace.Metadata.Name(),
+					Labels:    pulumi.ToStringMap(locals.KubernetesLabels),
+				},
+				Spec: certmanagerv1.CertificateSpecArgs{
+					DnsNames:   pulumi.ToStringArray(locals.IngressHostnames),
+					SecretName: pulumi.String(vars.BootstrapServerIngressCertSecretName),
+					IssuerRef: certmanagerv1.CertificateSpecIssuerRefArgs{
+						Kind: pulumi.String("ClusterIssuer"),
+						Name: pulumi.String(locals.IngressCertClusterIssuerName),
+					},
+				},
+			}, pulumi.Parent(createdNamespace))
+		if err != nil {
+			return nil, errors.Wrap(err, "error creating certificate for bootstrap server ingress")
+		}
 	}
 
 	// create kafka cluster
@@ -33,7 +56,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals, createdNamespace *kuberne
 			Metadata: metav1.ObjectMetaArgs{
 				Name:      pulumi.String(locals.KafkaKubernetes.Metadata.Id),
 				Namespace: createdNamespace.Metadata.Name(),
-				Labels:    pulumi.ToStringMap(labels),
+				Labels:    pulumi.ToStringMap(locals.KubernetesLabels),
 			},
 			Spec: v1beta2.KafkaSpecArgs{
 				EntityOperator: v1beta2.KafkaSpecEntityOperatorArgs{
@@ -114,7 +137,6 @@ func getIngressListeners(locals *Locals) v1beta2.KafkaSpecKafkaListenersArray {
 				Bootstrap: &v1beta2.KafkaSpecKafkaListenersConfigurationBootstrapArgs{
 					//if a client uses bootstrap server created for clients in the same network(internal), the bootstrap
 					//server returns the hostnames of brokers configured in the brokers section below.
-					Host: pulumi.String(locals.IngressInternalBootstrapHostname),
 					Annotations: pulumi.ToStringMap(map[string]string{
 						locals.KafkaIngressPrivateListenerLoadBalancerAnnotationKey: locals.KafkaIngressPrivateListenerLoadBalancerAnnotationValue,
 						vars.ExternalDnsHostnameAnnotationKey:                       locals.IngressInternalBootstrapHostname,
@@ -126,7 +148,7 @@ func getIngressListeners(locals *Locals) v1beta2.KafkaSpecKafkaListenersArray {
 				BrokerCertChainAndKey: &v1beta2.KafkaSpecKafkaListenersConfigurationBrokerCertChainAndKeyArgs{
 					Certificate: pulumi.String("tls.crt"),
 					Key:         pulumi.String("tls.key"),
-					SecretName:  pulumi.String(vars.CertSecretName),
+					SecretName:  pulumi.String(vars.BootstrapServerIngressCertSecretName),
 				},
 			},
 		})
@@ -144,7 +166,6 @@ func getIngressListeners(locals *Locals) v1beta2.KafkaSpecKafkaListenersArray {
 			Bootstrap: &v1beta2.KafkaSpecKafkaListenersConfigurationBootstrapArgs{
 				//if a client uses bootstrap server created for clients 'outside' the network, the bootstrap
 				//server returns the hostnames of brokers configured in the brokers section below.
-				Host: pulumi.String(locals.IngressExternalBootstrapHostname),
 				Annotations: pulumi.ToStringMap(map[string]string{
 					locals.KafkaIngressPublicListenerLoadBalancerAnnotationKey: locals.KafkaIngressPublicListenerLoadBalancerAnnotationValue,
 					vars.ExternalDnsHostnameAnnotationKey:                      locals.IngressExternalBootstrapHostname,
@@ -156,7 +177,7 @@ func getIngressListeners(locals *Locals) v1beta2.KafkaSpecKafkaListenersArray {
 			BrokerCertChainAndKey: &v1beta2.KafkaSpecKafkaListenersConfigurationBrokerCertChainAndKeyArgs{
 				Certificate: pulumi.String("tls.crt"),
 				Key:         pulumi.String("tls.key"),
-				SecretName:  pulumi.String(vars.CertSecretName),
+				SecretName:  pulumi.String(vars.BootstrapServerIngressCertSecretName),
 			},
 		},
 	})
@@ -171,7 +192,6 @@ func getIngressListenersBrokersArray(hostnames []string, loadBalancerAnnotationK
 			Broker:         pulumi.Int(i),
 			AdvertisedHost: pulumi.String(hostName),
 			AdvertisedPort: pulumi.Int(vars.ExternalPublicListenerPortNumber),
-			Host:           pulumi.String(hostName),
 			Annotations: pulumi.ToStringMap(map[string]string{
 				loadBalancerAnnotationKey:             loadBalancerAnnotationValue,
 				vars.ExternalDnsHostnameAnnotationKey: hostName,

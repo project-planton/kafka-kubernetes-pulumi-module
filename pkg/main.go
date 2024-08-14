@@ -10,16 +10,15 @@ import (
 )
 
 type ResourceStack struct {
-	Input  *kafkakubernetesmodel.KafkaKubernetesStackInput
-	Labels map[string]string
+	StackInput *kafkakubernetesmodel.KafkaKubernetesStackInput
 }
 
 func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
-	locals := initializeLocals(ctx, s.Input)
+	locals := initializeLocals(ctx, s.StackInput)
 
 	//create kubernetes-provider from the credential in the stack-kowlConfigTemplateInput
 	kubernetesProvider, err := pulumikubernetesprovider.GetWithKubernetesClusterCredential(ctx,
-		s.Input.KubernetesClusterCredential, "kubernetes")
+		s.StackInput.KubernetesClusterCredential, "kubernetes")
 	if err != nil {
 		return errors.Wrap(err, "failed to create kubernetes provider")
 	}
@@ -31,7 +30,7 @@ func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
 			Metadata: kubernetesmetav1.ObjectMetaPtrInput(
 				&kubernetesmetav1.ObjectMetaArgs{
 					Name:   pulumi.String(locals.Namespace),
-					Labels: pulumi.ToStringMap(s.Labels),
+					Labels: pulumi.ToStringMap(locals.KubernetesLabels),
 				}),
 		},
 		pulumi.Timeouts(&pulumi.CustomTimeouts{Create: "5s", Update: "5s", Delete: "5s"}),
@@ -41,32 +40,32 @@ func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
 	}
 
 	//create kafka cluster custom resource
-	createdKafkaCluster, err := kafkaCluster(ctx, locals, createdNamespace, s.Labels)
+	createdKafkaCluster, err := kafkaCluster(ctx, locals, createdNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to create kafka-cluster resources")
 	}
 
 	//create kafka admin user
-	if err := kafkaAdminUser(ctx, locals, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
+	if err := kafkaAdminUser(ctx, locals, createdNamespace, createdKafkaCluster); err != nil {
 		return errors.Wrap(err, "failed to create kafka admin user")
 	}
 
 	//create kafka topics
-	if err := kafkaTopics(ctx, locals, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
+	if err := kafkaTopics(ctx, locals, createdNamespace, createdKafkaCluster); err != nil {
 		return errors.Wrap(err, "failed to create kafka topics")
 	}
 
 	//create schema-registry
 	if locals.KafkaKubernetes.Spec.SchemaRegistryContainer != nil &&
 		locals.KafkaKubernetes.Spec.SchemaRegistryContainer.IsEnabled {
-		if err := schemaRegistry(ctx, locals, kubernetesProvider, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
+		if err := schemaRegistry(ctx, locals, kubernetesProvider, createdNamespace, createdKafkaCluster); err != nil {
 			return errors.Wrap(err, "failed to create schema registry deployment")
 		}
 	}
 
 	//create kowl
 	if locals.KafkaKubernetes.Spec.IsKowlDashboardEnabled {
-		if err := kowl(ctx, locals, kubernetesProvider, createdNamespace, createdKafkaCluster, s.Labels); err != nil {
+		if err := kowl(ctx, locals, kubernetesProvider, createdNamespace, createdKafkaCluster); err != nil {
 			return errors.Wrap(err, "failed to create kowl deployment")
 		}
 	}
