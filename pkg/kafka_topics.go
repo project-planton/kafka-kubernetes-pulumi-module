@@ -10,8 +10,7 @@ import (
 )
 
 func kafkaTopics(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
-	createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
-
+	createdKafkaCluster *v1beta2.Kafka) error {
 	for _, kafkaTopic := range locals.KafkaKubernetes.Spec.KafkaTopics {
 
 		config := vars.KafkaTopicDefaultConfig
@@ -25,7 +24,7 @@ func kafkaTopics(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernet
 				Metadata: metav1.ObjectMetaArgs{
 					Name:      pulumi.String(kafkaTopic.Name),
 					Namespace: createdNamespace.Metadata.Name(),
-					Labels:    pulumi.ToStringMap(labels),
+					Labels:    pulumi.ToStringMap(locals.KubernetesLabels),
 				},
 				Spec: v1beta2.KafkaTopicSpecArgs{
 					Config:     convertmaps.ConvertGoMapToPulumiMap(config),

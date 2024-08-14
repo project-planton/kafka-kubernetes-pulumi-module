@@ -4,12 +4,17 @@ import (
 	"fmt"
 	"github.com/plantoncloud/kafka-kubernetes-pulumi-module/pkg/outputs"
 	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes"
+	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/commons/apiresource/enums/apiresourcekind"
+	"github.com/plantoncloud/planton-cloud-apis/zzgo/cloud/planton/apis/connect/v1/kubernetesclustercredential/enums/kubernetesprovider"
+	"github.com/plantoncloud/pulumi-module-golang-commons/pkg/provider/kubernetes/kuberneteslabelkeys"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"strconv"
 )
 
 type Locals struct {
-	Namespace       string
-	KafkaKubernetes *kafkakubernetes.KafkaKubernetes
+	Namespace        string
+	KafkaKubernetes  *kafkakubernetes.KafkaKubernetes
+	KubernetesLabels map[string]string
 
 	IngressCertClusterIssuerName string
 	// bootstrap
@@ -29,28 +34,40 @@ type Locals struct {
 	SchemaRegistryKubeServiceFqdn         string
 
 	// kowl dashboard
-	IngressKowlCertSecretName   string
-	IngressExternalKowlHostname string
-	KowlKubeServiceFqdn         string
+	IngressKowlCertSecretName                              string
+	IngressExternalKowlHostname                            string
+	KowlKubeServiceFqdn                                    string
+	KafkaIngressPrivateListenerLoadBalancerAnnotationKey   string
+	KafkaIngressPrivateListenerLoadBalancerAnnotationValue string
+	KafkaIngressPublicListenerLoadBalancerAnnotationKey    string
+	KafkaIngressPublicListenerLoadBalancerAnnotationValue  string
 }
 
 func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKubernetesStackInput) *Locals {
 	locals := &Locals{}
-
-	ctx.Export(outputs.KafkaSaslUsername, pulumi.String(vars.AdminUsername))
 
 	//assign value for the locals variable to make it available across the project
 	locals.KafkaKubernetes = stackInput.ApiResource
 
 	kafkaKubernetes := stackInput.ApiResource
 
+	locals.KubernetesLabels = map[string]string{
+		kuberneteslabelkeys.Resource:     strconv.FormatBool(true),
+		kuberneteslabelkeys.Organization: kafkaKubernetes.Spec.EnvironmentInfo.OrgId,
+		kuberneteslabelkeys.Environment:  kafkaKubernetes.Spec.EnvironmentInfo.EnvId,
+		kuberneteslabelkeys.ResourceKind: apiresourcekind.ApiResourceKind_kafka_kubernetes.String(),
+		kuberneteslabelkeys.ResourceId:   kafkaKubernetes.Metadata.Id,
+	}
+
 	//decide on the namespace
 	locals.Namespace = kafkaKubernetes.Metadata.Id
+
 	ctx.Export(outputs.Namespace, pulumi.String(locals.Namespace))
+	ctx.Export(outputs.KafkaSaslUsername, pulumi.String(vars.AdminUsername))
 
-	locals.BootstrapKubeServiceName = fmt.Sprintf("%s-kafka-%s-bootstrap", kafkaKubernetes.Metadata.Id, vars.ExternalPublicListenerName)
+	locals.BootstrapKubeServiceName = fmt.Sprintf("%s-kafka-bootstrap", kafkaKubernetes.Metadata.Id)
 
-	locals.BootstrapKubeServiceFqdn = fmt.Sprintf("%s.%s.svc.cluster.local", locals.BootstrapKubeServiceName, locals.Namespace)
+	locals.BootstrapKubeServiceFqdn = fmt.Sprintf("%s.%s.svc", locals.BootstrapKubeServiceName, locals.Namespace)
 
 	// schema registry related locals data
 	if locals.KafkaKubernetes.Spec.SchemaRegistryContainer != nil &&
@@ -130,6 +147,14 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKube
 	//same as the ingress-domain-name as long as the same ingress-domain-name is added to the list of
 	//ingress-domain-names for the GkeCluster/EksCluster/AksCluster spec.
 	locals.IngressCertClusterIssuerName = kafkaKubernetes.Spec.Ingress.EndpointDomainName
+
+	switch stackInput.KubernetesClusterCredential.Spec.KubernetesProvider {
+	case kubernetesprovider.KubernetesProvider_gcp_gke:
+		locals.KafkaIngressPrivateListenerLoadBalancerAnnotationKey = "cloud.google.com/load-balancer-type"
+		locals.KafkaIngressPrivateListenerLoadBalancerAnnotationValue = "Internal"
+		locals.KafkaIngressPublicListenerLoadBalancerAnnotationKey = "cloud.google.com/load-balancer-type"
+		locals.KafkaIngressPublicListenerLoadBalancerAnnotationValue = "External"
+	}
 
 	return locals
 }

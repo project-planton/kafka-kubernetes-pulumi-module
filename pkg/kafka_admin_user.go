@@ -9,10 +9,11 @@ import (
 )
 
 func kafkaAdminUser(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
-	createdKafkaCluster *v1beta2.Kafka, labels map[string]string) error {
+	createdKafkaCluster *v1beta2.Kafka) error {
 
+	labels := locals.KubernetesLabels
 	//add the label required to create the admin secret for the target kafka-cluster
-	labels["strimzi.io/cluster"] = locals.KafkaKubernetes.Metadata.Id
+	labels[vars.ClusterLabelKey] = locals.KafkaKubernetes.Metadata.Id
 
 	_, err := v1beta2.NewKafkaUser(ctx,
 		"admin-user",
