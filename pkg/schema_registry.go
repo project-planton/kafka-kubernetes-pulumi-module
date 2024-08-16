@@ -222,7 +222,8 @@ func schemaRegistry(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kub
 					},
 				},
 			},
-		}, pulumi.DependsOn([]pulumi.Resource{addedCertificate}))
+		}, pulumi.Provider(kubernetesProvider),
+		pulumi.DependsOn([]pulumi.Resource{addedCertificate}))
 	if err != nil {
 		return errors.Wrap(err, "error creating gateway for schema-registry")
 	}
