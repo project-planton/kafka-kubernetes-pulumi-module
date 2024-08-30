@@ -34,7 +34,7 @@ func kafkaTopics(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernet
 				},
 			}, pulumi.Parent(createdKafkaCluster))
 		if err != nil {
-			return errors.Wrapf(err, "failed to create kafka-topic %s", kafkaTopic.Id)
+			return errors.Wrapf(err, "failed to create kafka-topic %s", kafkaTopic.Name)
 		}
 	}
 	return nil
