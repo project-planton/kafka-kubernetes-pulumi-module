@@ -185,10 +185,10 @@ github.com/plantoncloud-inc/go-commons v0.0.0-20240808131925-df6e3fcbfa5b h1:lBq
 github.com/plantoncloud-inc/go-commons v0.0.0-20240808131925-df6e3fcbfa5b/go.mod h1:+pCWO+TPdL709jbjCdJUWEHzSWTav2YIEuEgiKpumRo=
 github.com/plantoncloud/kubernetes-crd-pulumi-types v0.0.0-20240811054507-35b7232001a0 h1:AQjc+5kyDB1bXyjaKze4xNV2EvK6vXPepNqS+gmv3xI=
 github.com/plantoncloud/kubernetes-crd-pulumi-types v0.0.0-20240811054507-35b7232001a0/go.mod h1:YLCJtAs51fM1K6QceMbbnydcrUDHExpVlD0x6TaF1V4=
-github.com/plantoncloud/planton-cloud-apis v0.1.29 h1:oGWDsog2IIuSuypNJIQ2niv0zSahI4VPoNZVYgkabqI=
-github.com/plantoncloud/planton-cloud-apis v0.1.29/go.mod h1:w9MVFngB3aDe2sOv9ETDUkgNhyNTl1tbUywmbT5Qqxo=
-github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240813091317-49da3b41a14f h1:jpMuzK/xxg2SwHMp5fBfX2QcXKqH7l8f539Qye/vMUc=
-github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240813091317-49da3b41a14f/go.mod h1:Sr5reCDhYS+B+WkgydFWBaAR6tND/NMcDx8+l+7LAbo=
+github.com/plantoncloud/planton-cloud-apis v0.1.31 h1:3KZHSfAxujxQ5zJWSP94QpU/S3fsZBAXn1I7GacEGwQ=
+github.com/plantoncloud/planton-cloud-apis v0.1.31/go.mod h1:w9MVFngB3aDe2sOv9ETDUkgNhyNTl1tbUywmbT5Qqxo=
+github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240830131227-ad81d90f7d42 h1:nmo2wJNJKRUglstg49bMpBx/XMA1x/V/w7wD29Q603I=
+github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240830131227-ad81d90f7d42/go.mod h1:a8nbDIaSMMeBFQxj3ctPzmENpP+rALzHBGbv7DoNJcU=
 github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.57 h1:DU0SuaGAsci/IrJc3tss6lDjXckenn09zlCy0ZTlvms=
 github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.57/go.mod h1:2T4UfhOnO7eypHT3Umjerv36ACaUdwAS+HsfK4+LKy0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
