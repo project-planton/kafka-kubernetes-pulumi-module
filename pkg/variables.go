@@ -81,7 +81,7 @@ var vars = struct {
 		"message.timestamp.type":              "CreateTime",
 		"min.insync.replicas":                 "1",
 		"retention.bytes":                     "-1",
-		"retention.ms":                        "-1",
+		"retention.ms":                        "604800000",
 		"segment.bytes":                       "1073741824",
 		"segment.ms":                          "604800000",
 	},
@@ -108,12 +108,12 @@ kafka:
   tls:
     enabled: false
   schemaRegistry:
-    enabled: true
+    enabled: {{.IsSchemaRegistryEnabled}}
     urls: ["http://{{.SchemaRegistryHostname}}"]
   protobuf:
-    enabled: true
+    enabled: {{.IsSchemaRegistryEnabled}}
     schemaRegistry:
-      enabled: true
+      enabled: {{.IsSchemaRegistryEnabled}}
       refreshInterval: {{.RefreshIntervalMinutes}}m
 `,
 	KowlDeploymentName:              "kowl",
