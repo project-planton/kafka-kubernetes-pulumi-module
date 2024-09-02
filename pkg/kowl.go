@@ -24,6 +24,7 @@ func kowl(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Pr
 		SaslUsername                   string
 		SchemaRegistryHostname         string
 		RefreshIntervalMinutes         int
+		IsSchemaRegistryEnabled        bool
 	}
 
 	kowlConfig, err := file.RenderTemplate(&kowlConfigTemplateInput{
@@ -32,6 +33,7 @@ func kowl(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Pr
 		SaslUsername:                   vars.AdminUsername,
 		SchemaRegistryHostname:         locals.SchemaRegistryKubeServiceFqdn,
 		RefreshIntervalMinutes:         vars.KowlRefreshIntervalMinutes,
+		IsSchemaRegistryEnabled:        locals.KafkaKubernetes.Spec.SchemaRegistryContainer.IsEnabled,
 	}, vars.KowlConfigFileTemplate)
 	if err != nil {
 		return errors.Wrap(err, "failed to render kowl config file")
