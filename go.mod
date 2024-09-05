@@ -1,6 +1,8 @@
 module github.com/plantoncloud/kafka-kubernetes-pulumi-module
 
-go 1.22.6
+go 1.23
+
+toolchain go1.23.0
 
 //replace github.com/plantoncloud/planton-cloud-apis => ../../plantoncloud/planton-cloud-apis
 
@@ -13,12 +15,12 @@ go 1.22.6
 require (
 	github.com/pkg/errors v0.9.1
 	github.com/plantoncloud-inc/go-commons v0.0.0-20240808131925-df6e3fcbfa5b
-	github.com/plantoncloud/kubernetes-crd-pulumi-types v0.0.0-20240811054507-35b7232001a0
-	github.com/plantoncloud/planton-cloud-apis v0.1.31
-	github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240830131227-ad81d90f7d42
-	github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.57
+	github.com/plantoncloud/kubernetes-crd-pulumi-types v0.0.0-20240903231550-b86827cb2eb9
+	github.com/plantoncloud/planton-cloud-apis v0.1.43
+	github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20240905105923-c9458da08f51
+	github.com/plantoncloud/stack-job-runner-golang-sdk v0.0.58
 	github.com/pulumi/pulumi-kubernetes/sdk/v4 v4.15.0
-	github.com/pulumi/pulumi/sdk/v3 v3.127.0
+	github.com/pulumi/pulumi/sdk/v3 v3.130.0
 	k8s.io/api v0.30.3
 )
 

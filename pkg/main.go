@@ -64,7 +64,7 @@ func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
 	}
 
 	//create kowl
-	if locals.KafkaKubernetes.Spec.IsKowlDashboardEnabled {
+	if locals.KafkaKubernetes.Spec.IsDeployKafkaUi {
 		if err := kowl(ctx, locals, kubernetesProvider, createdNamespace, createdKafkaCluster); err != nil {
 			return errors.Wrap(err, "failed to create kowl deployment")
 		}

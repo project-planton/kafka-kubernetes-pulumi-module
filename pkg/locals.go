@@ -63,7 +63,9 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKube
 	locals.Namespace = kafkaKubernetes.Metadata.Id
 
 	ctx.Export(outputs.Namespace, pulumi.String(locals.Namespace))
-	ctx.Export(outputs.KafkaSaslUsername, pulumi.String(vars.AdminUsername))
+	ctx.Export(outputs.KafkaAdminUsername, pulumi.String(vars.AdminUsername))
+	ctx.Export(outputs.KafkaAdminPasswordSecretName, pulumi.String(vars.SaslPasswordSecretName))
+	ctx.Export(outputs.KafkaAdminPasswordSecretKey, pulumi.String(vars.SaslPasswordKeyInSecret))
 
 	locals.BootstrapKubeServiceName = fmt.Sprintf("%s-kafka-bootstrap", kafkaKubernetes.Metadata.Id)
 
@@ -90,13 +92,13 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKube
 	}
 
 	// kowl related locals data
-	if locals.KafkaKubernetes.Spec.IsKowlDashboardEnabled {
+	if locals.KafkaKubernetes.Spec.IsDeployKafkaUi {
 
 		locals.IngressKowlCertSecretName = fmt.Sprintf("cert-%s-kowl", kafkaKubernetes.Metadata.Id)
 
 		locals.IngressExternalKowlHostname = fmt.Sprintf("%s-kowl.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
 
-		ctx.Export(outputs.IngressExternalKowlUrl, pulumi.Sprintf("https://%s", locals.IngressExternalKowlHostname))
+		ctx.Export(outputs.IngressKafkaUiExternalUrl, pulumi.Sprintf("https://%s", locals.IngressExternalKowlHostname))
 
 		locals.KowlKubeServiceFqdn = fmt.Sprintf("%s.%s.svc.cluster.local", vars.KowlKubeServiceName, locals.Namespace)
 	}
