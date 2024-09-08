@@ -3,7 +3,7 @@ package pkg
 import (
 	"github.com/pkg/errors"
 	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
-	"github.com/plantoncloud/pulumi-module-golang-commons/pkg/provider/kubernetes/helm/convertmaps"
+	"github.com/plantoncloud/pulumi-module-golang-commons/pkg/datatypes/stringmaps/convertstringmaps"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	metav1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/meta/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -27,7 +27,7 @@ func kafkaTopics(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernet
 					Labels:    pulumi.ToStringMap(locals.KubernetesLabels),
 				},
 				Spec: v1beta2.KafkaTopicSpecArgs{
-					Config:     convertmaps.ConvertGoMapToPulumiMap(config),
+					Config:     convertstringmaps.ConvertGoStringMapToPulumiMap(config),
 					Partitions: pulumi.Int(kafkaTopic.Partitions),
 					Replicas:   pulumi.Int(kafkaTopic.Replicas),
 					TopicName:  pulumi.String(kafkaTopic.Name),
