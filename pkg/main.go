@@ -9,16 +9,12 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-type ResourceStack struct {
-	StackInput *kafkakubernetesmodel.KafkaKubernetesStackInput
-}
-
-func (s *ResourceStack) Resources(ctx *pulumi.Context) error {
-	locals := initializeLocals(ctx, s.StackInput)
+func Resources(ctx *pulumi.Context, stackInput *kafkakubernetesmodel.KafkaKubernetesStackInput) error {
+	locals := initializeLocals(ctx, stackInput)
 
 	//create kubernetes-provider from the credential in the stack-kowlConfigTemplateInput
 	kubernetesProvider, err := pulumikubernetesprovider.GetWithKubernetesClusterCredential(ctx,
-		s.StackInput.KubernetesClusterCredential, "kubernetes")
+		stackInput.KubernetesClusterCredential, "kubernetes")
 	if err != nil {
 		return errors.Wrap(err, "failed to create kubernetes provider")
 	}
