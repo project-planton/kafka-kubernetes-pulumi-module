@@ -47,9 +47,9 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKube
 	locals := &Locals{}
 
 	//assign value for the locals variable to make it available across the project
-	locals.KafkaKubernetes = stackInput.ApiResource
+	locals.KafkaKubernetes = stackInput.Target
 
-	kafkaKubernetes := stackInput.ApiResource
+	kafkaKubernetes := stackInput.Target
 
 	locals.KubernetesLabels = map[string]string{
 		kuberneteslabelkeys.Resource:     strconv.FormatBool(true),
@@ -150,7 +150,7 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKube
 	//ingress-domain-names for the GkeCluster/EksCluster/AksCluster spec.
 	locals.IngressCertClusterIssuerName = kafkaKubernetes.Spec.Ingress.EndpointDomainName
 
-	switch stackInput.KubernetesClusterCredential.Spec.KubernetesProvider {
+	switch stackInput.KubernetesCluster.KubernetesProvider {
 	case kubernetesprovider.KubernetesProvider_gcp_gke:
 		locals.KafkaIngressPrivateListenerLoadBalancerAnnotationKey = "cloud.google.com/load-balancer-type"
 		locals.KafkaIngressPrivateListenerLoadBalancerAnnotationValue = "Internal"
