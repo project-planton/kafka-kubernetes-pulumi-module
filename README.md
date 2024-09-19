@@ -63,6 +63,9 @@ Install the required dependencies:
 cd kafka-kubernetes-pulumi-module
 go mod download
 ```
+## Usage
+
+Refer to [example](example.md) for usage instructions.
 
 ## Module Components
 
