@@ -1,65 +1,219 @@
-## Usage
-
-### Sample YAML Configuration
-
-Create a YAML file (`kafka-cluster.yaml`) with the desired configuration:
+# Example 1: Basic Kafka Kubernetes Setup
 
 ```yaml
 apiVersion: code2cloud.planton.cloud/v1
 kind: KafkaKubernetes
 metadata:
-  id: my-kafka-cluster
+  name: kafka-cluster-basic
 spec:
-  kubernetes_cluster_credential_id: your-cluster-credential-id
+  kubernetes_cluster_credential_id: my-cluster-creds
+  kafka_topics:
+    - name: my-topic
+      partitions: 3
+      replicas: 2
   broker_container:
-    replicas: 3
+    replicas: 1
     resources:
       requests:
-        cpu: "500m"
-        memory: "1Gi"
+        cpu: 100m
+        memory: 512Mi
       limits:
-        cpu: "1"
-        memory: "2Gi"
-    disk_size: "10Gi"
+        cpu: 1
+        memory: 1Gi
+    disk_size: 20Gi
   zookeeper_container:
     replicas: 3
     resources:
       requests:
-        cpu: "500m"
-        memory: "1Gi"
+        cpu: 50m
+        memory: 256Mi
       limits:
-        cpu: "1"
-        memory: "2Gi"
-    disk_size: "5Gi"
+        cpu: 500m
+        memory: 512Mi
+    disk_size: 10Gi
+  ingress:
+    enabled: false
+  is_deploy_kafka_ui: false
+```
+
+# Example 2: Kafka Kubernetes with Schema Registry and Kafka UI
+
+```yaml
+apiVersion: code2cloud.planton.cloud/v1
+kind: KafkaKubernetes
+metadata:
+  name: kafka-cluster-with-schema-registry
+spec:
+  kubernetes_cluster_credential_id: my-cluster-creds
   kafka_topics:
-    - name: topic1
+    - name: my-topic
       partitions: 3
       replicas: 3
-    - name: topic2
-      partitions: 1
-      replicas: 1
+  broker_container:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 2
+        memory: 2Gi
+    disk_size: 50Gi
+  zookeeper_container:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+    disk_size: 20Gi
   schema_registry_container:
     is_enabled: true
     replicas: 1
     resources:
       requests:
-        cpu: "100m"
-        memory: "256Mi"
+        cpu: 50m
+        memory: 256Mi
       limits:
-        cpu: "200m"
-        memory: "512Mi"
+        cpu: 500m
+        memory: 512Mi
   ingress:
-    is_enabled: true
-    endpoint_domain_name: "example.com"
+    enabled: true
+    ingressClassName: "nginx"
+    hosts:
+      - host: kafka.mydomain.com
+        paths:
+          - /
   is_deploy_kafka_ui: true
 ```
 
-### Deploying with CLI
+# Example 3: Kafka Kubernetes with Minimal Configuration
 
-Use the provided CLI tool to deploy the Kafka cluster:
-
-```bash
-platon pulumi up --stack-input kafka-cluster.yaml
+```yaml
+apiVersion: code2cloud.planton.cloud/v1
+kind: KafkaKubernetes
+metadata:
+  name: kafka-minimal
+spec:
+  kubernetes_cluster_credential_id: my-cluster-creds
+  broker_container:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    disk_size: 10Gi
+  zookeeper_container:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    disk_size: 10Gi
+  ingress:
+    enabled: false
+  is_deploy_kafka_ui: false
 ```
 
-If no Pulumi module is specified, the CLI uses the default module corresponding to the API resource.
+# Example 4: Kafka Kubernetes with Custom Topic Configuration
+
+```yaml
+apiVersion: code2cloud.planton.cloud/v1
+kind: KafkaKubernetes
+metadata:
+  name: kafka-custom-topics
+spec:
+  kubernetes_cluster_credential_id: my-cluster-creds
+  kafka_topics:
+    - name: logs
+      partitions: 5
+      replicas: 3
+      config:
+        retention.ms: "86400000"
+        cleanup.policy: "delete"
+    - name: metrics
+      partitions: 10
+      replicas: 2
+      config:
+        retention.ms: "3600000"
+        cleanup.policy: "compact"
+  broker_container:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 4
+        memory: 4Gi
+    disk_size: 100Gi
+  zookeeper_container:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 2
+        memory: 2Gi
+    disk_size: 20Gi
+  ingress:
+    enabled: true
+  is_deploy_kafka_ui: true
+```
+
+# Example 5: Kafka Kubernetes with Schema Registry but No Kafka UI
+
+```yaml
+apiVersion: code2cloud.planton.cloud/v1
+kind: KafkaKubernetes
+metadata:
+  name: kafka-with-schema-registry
+spec:
+  kubernetes_cluster_credential_id: my-cluster-creds
+  kafka_topics:
+    - name: transactions
+      partitions: 3
+      replicas: 2
+  broker_container:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 2
+        memory: 2Gi
+    disk_size: 50Gi
+  zookeeper_container:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+    disk_size: 20Gi
+  schema_registry_container:
+    is_enabled: true
+    replicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+  ingress:
+    enabled: true
+  is_deploy_kafka_ui: false
+``` 
