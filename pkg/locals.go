@@ -3,9 +3,9 @@ package pkg
 import (
 	"fmt"
 	"github.com/plantoncloud/kafka-kubernetes-pulumi-module/pkg/outputs"
-	"github.com/plantoncloud/planton/apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes"
-	"github.com/plantoncloud/planton/apis/zzgo/cloud/planton/apis/commons/apiresource/enums/apiresourcekind"
-	"github.com/plantoncloud/planton/apis/zzgo/cloud/planton/apis/connect/v1/kubernetesclustercredential"
+	"github.com/plantoncloud/project-planton/apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes"
+	"github.com/plantoncloud/project-planton/apis/zzgo/cloud/planton/apis/commons/apiresource/enums/apiresourcekind"
+	"github.com/plantoncloud/project-planton/apis/zzgo/cloud/planton/apis/connect/v1/kubernetesclustercredential"
 	"github.com/plantoncloud/pulumi-module-golang-commons/pkg/provider/kubernetes/kuberneteslabelkeys"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"strconv"
