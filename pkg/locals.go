@@ -1,11 +1,10 @@
 package pkg
 
 import (
+	kubernetesclustercredentialv1 "buf.build/gen/go/plantoncloud/project-planton/protocolbuffers/go/project/planton/apis/credential/kubernetesclustercredential/v1"
+	kafkakubernetesv1 "buf.build/gen/go/plantoncloud/project-planton/protocolbuffers/go/project/planton/apis/provider/kubernetes/kafkakubernetes/v1"
 	"fmt"
 	"github.com/plantoncloud/kafka-kubernetes-pulumi-module/pkg/outputs"
-	"github.com/plantoncloud/project-planton/apis/zzgo/cloud/planton/apis/code2cloud/v1/kubernetes/kafkakubernetes"
-	"github.com/plantoncloud/project-planton/apis/zzgo/cloud/planton/apis/commons/apiresource/enums/apiresourcekind"
-	"github.com/plantoncloud/project-planton/apis/zzgo/cloud/planton/apis/connect/v1/kubernetesclustercredential"
 	"github.com/plantoncloud/pulumi-module-golang-commons/pkg/provider/kubernetes/kuberneteslabelkeys"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"strconv"
@@ -13,7 +12,7 @@ import (
 
 type Locals struct {
 	Namespace        string
-	KafkaKubernetes  *kafkakubernetes.KafkaKubernetes
+	KafkaKubernetes  *kafkakubernetesv1.KafkaKubernetes
 	KubernetesLabels map[string]string
 
 	IngressCertClusterIssuerName string
@@ -43,7 +42,7 @@ type Locals struct {
 	KafkaIngressPublicListenerLoadBalancerAnnotationValue  string
 }
 
-func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKubernetesStackInput) *Locals {
+func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKubernetesStackInput) *Locals {
 	locals := &Locals{}
 
 	//assign value for the locals variable to make it available across the project
@@ -55,7 +54,7 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKube
 		kuberneteslabelkeys.Resource:     strconv.FormatBool(true),
 		kuberneteslabelkeys.Organization: kafkaKubernetes.Spec.EnvironmentInfo.OrgId,
 		kuberneteslabelkeys.Environment:  kafkaKubernetes.Spec.EnvironmentInfo.EnvId,
-		kuberneteslabelkeys.ResourceKind: apiresourcekind.ApiResourceKind_kafka_kubernetes.String(),
+		kuberneteslabelkeys.ResourceKind: "kafka_kubernetes",
 		kuberneteslabelkeys.ResourceId:   kafkaKubernetes.Metadata.Id,
 	}
 
@@ -151,7 +150,7 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetes.KafkaKube
 	locals.IngressCertClusterIssuerName = kafkaKubernetes.Spec.Ingress.EndpointDomainName
 
 	switch stackInput.KubernetesCluster.KubernetesProvider {
-	case kubernetesclustercredential.KubernetesProvider_gcp_gke:
+	case kubernetesclustercredentialv1.KubernetesProvider_gcp_gke:
 		locals.KafkaIngressPrivateListenerLoadBalancerAnnotationKey = "cloud.google.com/load-balancer-type"
 		locals.KafkaIngressPrivateListenerLoadBalancerAnnotationValue = "Internal"
 		locals.KafkaIngressPublicListenerLoadBalancerAnnotationKey = "cloud.google.com/load-balancer-type"
