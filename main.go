@@ -1,7 +1,7 @@
 package main
 
 import (
-	kafkakubernetesv1 "buf.build/gen/go/plantoncloud/project-planton/protocolbuffers/go/project/planton/apis/provider/kubernetes/kafkakubernetes/v1"
+	kafkakubernetesv1 "buf.build/gen/go/plantoncloud/project-planton/protocolbuffers/go/project/planton/provider/kubernetes/kafkakubernetes/v1"
 	"github.com/pkg/errors"
 	"github.com/plantoncloud/kafka-kubernetes-pulumi-module/pkg"
 	"github.com/plantoncloud/pulumi-module-golang-commons/pkg/stackinput"
