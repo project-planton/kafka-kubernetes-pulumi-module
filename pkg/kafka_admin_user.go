@@ -11,7 +11,7 @@ import (
 func kafkaAdminUser(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernetescorev1.Namespace,
 	createdKafkaCluster *v1beta2.Kafka) error {
 
-	labels := locals.KubernetesLabels
+	labels := locals.Labels
 	//add the label required to create the admin secret for the target kafka-cluster
 	labels[vars.ClusterLabelKey] = locals.KafkaKubernetes.Metadata.Id
 

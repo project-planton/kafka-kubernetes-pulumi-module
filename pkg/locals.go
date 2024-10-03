@@ -11,9 +11,9 @@ import (
 )
 
 type Locals struct {
-	Namespace        string
-	KafkaKubernetes  *kafkakubernetesv1.KafkaKubernetes
-	KubernetesLabels map[string]string
+	Namespace       string
+	KafkaKubernetes *kafkakubernetesv1.KafkaKubernetes
+	Labels          map[string]string
 
 	IngressCertClusterIssuerName string
 	// bootstrap
@@ -45,17 +45,25 @@ type Locals struct {
 func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKubernetesStackInput) *Locals {
 	locals := &Locals{}
 
-	//assign value for the locals variable to make it available across the project
-	locals.KafkaKubernetes = stackInput.Target
+	//if the id is empty, use name as id
+	if stackInput.Target.Metadata.Id == "" {
+		stackInput.Target.Metadata.Id = stackInput.Target.Metadata.Name
+	}
 
 	kafkaKubernetes := stackInput.Target
 
-	locals.KubernetesLabels = map[string]string{
+	//assign value for the locals variable to make it available across the project
+	locals.KafkaKubernetes = stackInput.Target
+
+	locals.Labels = map[string]string{
 		kuberneteslabelkeys.Resource:     strconv.FormatBool(true),
-		kuberneteslabelkeys.Organization: kafkaKubernetes.Spec.EnvironmentInfo.OrgId,
-		kuberneteslabelkeys.Environment:  kafkaKubernetes.Spec.EnvironmentInfo.EnvId,
 		kuberneteslabelkeys.ResourceKind: "kafka_kubernetes",
 		kuberneteslabelkeys.ResourceId:   kafkaKubernetes.Metadata.Id,
+	}
+
+	if kafkaKubernetes.Spec.EnvironmentInfo != nil {
+		locals.Labels[kuberneteslabelkeys.Environment] = kafkaKubernetes.Spec.EnvironmentInfo.EnvId
+		locals.Labels[kuberneteslabelkeys.Organization] = kafkaKubernetes.Spec.EnvironmentInfo.OrgId
 	}
 
 	//decide on the namespace

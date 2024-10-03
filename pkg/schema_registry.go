@@ -19,7 +19,7 @@ func schemaRegistry(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kub
 	createdNamespace *kubernetescorev1.Namespace,
 	createdKafkaCluster *v1beta2.Kafka) error {
 
-	labels := locals.KubernetesLabels
+	labels := locals.Labels
 	labels["app"] = vars.SchemaRegistryDeploymentName
 
 	//create schema-registry deployment

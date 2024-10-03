@@ -24,7 +24,7 @@ func kafkaTopics(ctx *pulumi.Context, locals *Locals, createdNamespace *kubernet
 				Metadata: metav1.ObjectMetaArgs{
 					Name:      pulumi.String(kafkaTopic.Name),
 					Namespace: createdNamespace.Metadata.Name(),
-					Labels:    pulumi.ToStringMap(locals.KubernetesLabels),
+					Labels:    pulumi.ToStringMap(locals.Labels),
 				},
 				Spec: v1beta2.KafkaTopicSpecArgs{
 					Config:     convertstringmaps.ConvertGoStringMapToPulumiMap(config),

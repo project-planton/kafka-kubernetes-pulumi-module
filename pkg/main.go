@@ -26,7 +26,7 @@ func Resources(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKubernete
 			Metadata: kubernetesmetav1.ObjectMetaPtrInput(
 				&kubernetesmetav1.ObjectMetaArgs{
 					Name:   pulumi.String(locals.Namespace),
-					Labels: pulumi.ToStringMap(locals.KubernetesLabels),
+					Labels: pulumi.ToStringMap(locals.Labels),
 				}),
 		},
 		pulumi.Timeouts(&pulumi.CustomTimeouts{Create: "5s", Update: "5s", Delete: "5s"}),

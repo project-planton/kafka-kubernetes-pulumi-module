@@ -33,7 +33,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals,
 				Metadata: metav1.ObjectMetaArgs{
 					Name:      pulumi.String(locals.KafkaKubernetes.Metadata.Id),
 					Namespace: createdNamespace.Metadata.Name(),
-					Labels:    pulumi.ToStringMap(locals.KubernetesLabels),
+					Labels:    pulumi.ToStringMap(locals.Labels),
 				},
 				Spec: certmanagerv1.CertificateSpecArgs{
 					DnsNames:   pulumi.ToStringArray(locals.IngressHostnames),
@@ -56,7 +56,7 @@ func kafkaCluster(ctx *pulumi.Context, locals *Locals,
 			Metadata: metav1.ObjectMetaArgs{
 				Name:      pulumi.String(locals.KafkaKubernetes.Metadata.Id),
 				Namespace: createdNamespace.Metadata.Name(),
-				Labels:    pulumi.ToStringMap(locals.KubernetesLabels),
+				Labels:    pulumi.ToStringMap(locals.Labels),
 			},
 			Spec: v1beta2.KafkaSpecArgs{
 				EntityOperator: v1beta2.KafkaSpecEntityOperatorArgs{

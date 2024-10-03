@@ -52,7 +52,7 @@ func kowl(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kubernetes.Pr
 		return errors.Wrap(err, "failed to add config-map")
 	}
 
-	labels := locals.KubernetesLabels
+	labels := locals.Labels
 	labels["app"] = vars.KowlDeploymentName
 
 	_, err = appsv1.NewDeployment(ctx, vars.KowlDeploymentName, &appsv1.DeploymentArgs{
