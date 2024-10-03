@@ -10,7 +10,7 @@ require (
 	buf.build/gen/go/plantoncloud/project-planton/protocolbuffers/go v1.34.2-20241003094048-890f92dd6eb4.2
 	github.com/pkg/errors v0.9.1
 	github.com/plantoncloud/kubernetes-crd-pulumi-types v0.0.0-20240903231550-b86827cb2eb9
-	github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20241003110703-1d27875e1587
+	github.com/plantoncloud/pulumi-module-golang-commons v0.0.0-20241003135220-d540f3f192f8
 	github.com/pulumi/pulumi-kubernetes/sdk/v4 v4.15.0
 	github.com/pulumi/pulumi/sdk/v3 v3.130.0
 	k8s.io/api v0.30.3
