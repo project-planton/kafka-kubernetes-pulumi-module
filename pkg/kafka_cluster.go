@@ -2,8 +2,8 @@ package pkg
 
 import (
 	"github.com/pkg/errors"
-	certmanagerv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/certmanager/certmanager/v1"
-	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
+	certmanagerv1 "github.com/project-planton/kubernetes-crd-pulumi-types/pkg/certmanager/kubernetes/cert_manager/v1"
+	"github.com/project-planton/kubernetes-crd-pulumi-types/pkg/strimzioperator/kubernetes/kafka/v1beta2"
 	kubernetescorev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	metav1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/meta/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"

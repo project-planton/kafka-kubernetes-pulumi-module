@@ -3,9 +3,9 @@ package pkg
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	certmanagerv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/certmanager/certmanager/v1"
-	gatewayv1 "github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/gatewayapis/gateway/v1"
-	"github.com/plantoncloud/kubernetes-crd-pulumi-types/pkg/strimzioperator/kafka/v1beta2"
+	certmanagerv1 "github.com/project-planton/kubernetes-crd-pulumi-types/pkg/certmanager/kubernetes/cert_manager/v1"
+	gatewayv1 "github.com/project-planton/kubernetes-crd-pulumi-types/pkg/gatewayapis/kubernetes/gateway/v1"
+	"github.com/project-planton/kubernetes-crd-pulumi-types/pkg/strimzioperator/kubernetes/kafka/v1beta2"
 	"github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -183,10 +183,10 @@ func schemaRegistry(ctx *pulumi.Context, locals *Locals, kubernetesProvider *kub
 			},
 			Spec: gatewayv1.GatewaySpecArgs{
 				GatewayClassName: pulumi.String(vars.GatewayIngressClassName),
-				Addresses: pulumi.Array{
-					pulumi.Map{
-						"type":  pulumi.String("Hostname"),
-						"value": pulumi.String(vars.GatewayExternalLoadBalancerServiceHostname),
+				Addresses: gatewayv1.GatewaySpecAddressesArray{
+					gatewayv1.GatewaySpecAddressesArgs{
+						Type:  pulumi.String("Hostname"),
+						Value: pulumi.String(vars.GatewayExternalLoadBalancerServiceHostname),
 					},
 				},
 				Listeners: gatewayv1.GatewaySpecListenersArray{
