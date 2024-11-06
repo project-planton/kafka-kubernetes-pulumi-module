@@ -61,9 +61,13 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKu
 		kuberneteslabelkeys.ResourceId:   kafkaKubernetes.Metadata.Id,
 	}
 
-	if kafkaKubernetes.Spec.EnvironmentInfo != nil {
-		locals.Labels[kuberneteslabelkeys.Environment] = kafkaKubernetes.Spec.EnvironmentInfo.EnvId
-		locals.Labels[kuberneteslabelkeys.Organization] = kafkaKubernetes.Spec.EnvironmentInfo.OrgId
+	if kafkaKubernetes.Metadata.Org != "" {
+		locals.Labels[kuberneteslabelkeys.Organization] = kafkaKubernetes.Metadata.Org
+	}
+
+	if kafkaKubernetes.Metadata.Env != nil {
+		locals.Labels[kuberneteslabelkeys.Environment] = kafkaKubernetes.Metadata.Env.Id
+
 	}
 
 	//decide on the namespace
