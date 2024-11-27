@@ -88,9 +88,9 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKu
 
 		locals.IngressSchemaRegistryCertSecretName = fmt.Sprintf("cert-%s-schema-registry", kafkaKubernetes.Metadata.Id)
 
-		locals.IngressExternalSchemaRegistryHostname = fmt.Sprintf("%s-schema-registry.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
+		locals.IngressExternalSchemaRegistryHostname = fmt.Sprintf("%s-schema-registry.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.DnsDomain)
 
-		locals.IngressInternalSchemaRegistryHostname = fmt.Sprintf("%s-schema-registry-internal.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
+		locals.IngressInternalSchemaRegistryHostname = fmt.Sprintf("%s-schema-registry-internal.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.DnsDomain)
 
 		ctx.Export(outputs.IngressExternalSchemaRegistryUrl, pulumi.Sprintf("https://%s", locals.IngressExternalSchemaRegistryHostname))
 		ctx.Export(outputs.IngressInternalSchemaRegistryUrl, pulumi.Sprintf("https://%s", locals.IngressInternalSchemaRegistryHostname))
@@ -107,7 +107,7 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKu
 
 		locals.IngressKowlCertSecretName = fmt.Sprintf("cert-%s-kowl", kafkaKubernetes.Metadata.Id)
 
-		locals.IngressExternalKowlHostname = fmt.Sprintf("%s-kowl.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
+		locals.IngressExternalKowlHostname = fmt.Sprintf("%s-kowl.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.DnsDomain)
 
 		ctx.Export(outputs.IngressKafkaUiExternalUrl, pulumi.Sprintf("https://%s", locals.IngressExternalKowlHostname))
 
@@ -116,13 +116,13 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKu
 
 	if kafkaKubernetes.Spec.Ingress == nil ||
 		!kafkaKubernetes.Spec.Ingress.IsEnabled ||
-		kafkaKubernetes.Spec.Ingress.EndpointDomainName == "" {
+		kafkaKubernetes.Spec.Ingress.DnsDomain == "" {
 		return locals
 	}
 
-	locals.IngressExternalBootstrapHostname = fmt.Sprintf("%s-bootstrap.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
+	locals.IngressExternalBootstrapHostname = fmt.Sprintf("%s-bootstrap.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.DnsDomain)
 
-	locals.IngressInternalBootstrapHostname = fmt.Sprintf("%s-bootstrap-internal.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
+	locals.IngressInternalBootstrapHostname = fmt.Sprintf("%s-bootstrap-internal.%s", kafkaKubernetes.Metadata.Id, kafkaKubernetes.Spec.Ingress.DnsDomain)
 
 	ctx.Export(outputs.IngressExternalBootStrapHostname, pulumi.String(locals.IngressExternalBootstrapHostname))
 	ctx.Export(outputs.IngressInternalBootStrapHostname, pulumi.String(locals.IngressInternalBootstrapHostname))
@@ -130,14 +130,14 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKu
 	// Creating internal broker hostnames
 	ingressInternalBrokerHostnames := make([]string, int(kafkaKubernetes.Spec.BrokerContainer.Replicas))
 	for i := 0; i < int(kafkaKubernetes.Spec.BrokerContainer.Replicas); i++ {
-		ingressInternalBrokerHostnames[i] = fmt.Sprintf("%s-broker-b%d-internal.%s", kafkaKubernetes.Metadata.Id, i, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
+		ingressInternalBrokerHostnames[i] = fmt.Sprintf("%s-broker-b%d-internal.%s", kafkaKubernetes.Metadata.Id, i, kafkaKubernetes.Spec.Ingress.DnsDomain)
 	}
 	locals.IngressInternalBrokerHostnames = ingressInternalBrokerHostnames
 
 	// Creating external broker hostnames
 	ingressExternalBrokerHostnames := make([]string, int(kafkaKubernetes.Spec.BrokerContainer.Replicas))
 	for i := 0; i < int(kafkaKubernetes.Spec.BrokerContainer.Replicas); i++ {
-		ingressExternalBrokerHostnames[i] = fmt.Sprintf("%s-broker-b%d.%s", kafkaKubernetes.Metadata.Id, i, kafkaKubernetes.Spec.Ingress.EndpointDomainName)
+		ingressExternalBrokerHostnames[i] = fmt.Sprintf("%s-broker-b%d.%s", kafkaKubernetes.Metadata.Id, i, kafkaKubernetes.Spec.Ingress.DnsDomain)
 	}
 	locals.IngressExternalBrokerHostnames = ingressExternalBrokerHostnames
 
@@ -159,9 +159,9 @@ func initializeLocals(ctx *pulumi.Context, stackInput *kafkakubernetesv1.KafkaKu
 	//if the kubernetes-cluster is created using Planton Cloud, then the cluster-issuer name will be
 	//same as the ingress-domain-name as long as the same ingress-domain-name is added to the list of
 	//ingress-domain-names for the GkeCluster/EksCluster/AksCluster spec.
-	locals.IngressCertClusterIssuerName = kafkaKubernetes.Spec.Ingress.EndpointDomainName
+	locals.IngressCertClusterIssuerName = kafkaKubernetes.Spec.Ingress.DnsDomain
 
-	switch stackInput.KubernetesCluster.KubernetesProvider {
+	switch stackInput.KubernetesCluster.Provider {
 	case kubernetesclustercredentialv1.KubernetesProvider_gcp_gke:
 		locals.KafkaIngressPrivateListenerLoadBalancerAnnotationKey = "cloud.google.com/load-balancer-type"
 		locals.KafkaIngressPrivateListenerLoadBalancerAnnotationValue = "Internal"
